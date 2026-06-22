@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import Anthropic from "@anthropic-ai/sdk";
-import { isAuthed } from "@/lib/auth-server";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import type { EstimateResult } from "@/lib/types";
 
@@ -17,12 +16,8 @@ const ALLOWED_MEDIA = new Set(["image/jpeg", "image/png", "image/webp", "image/g
 const clampInt = (v: unknown) => Math.max(0, Math.round(Number(v) || 0));
 
 export async function POST(req: Request) {
-  // 1) Auth (defense in depth — middleware already gates this route).
-  if (!(await isAuthed())) {
-    return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  }
-
-  // 2) Rate limit per IP so a leaked URL cannot run up a large bill.
+  // Rate limit per IP. The app is open (no sign-in), so this is the main guard
+  // stopping a stray URL from running up a large Anthropic bill.
   const limit = rateLimit(`estimate:${clientIp(req)}`, 20, 60_000);
   if (!limit.ok) {
     return NextResponse.json(

@@ -153,10 +153,4 @@ html,body{margin:0; padding:0; background:#EDEFE9;}
 .cal-avg-l{font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); margin-top:3px;}
 .cal-hmeta{font-family:var(--fm); font-size:11px; color:var(--muted); margin-top:5px;}
 .cal-hbadge{font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted);}
-
-/* ---------------------------- additions: login ----------------------------- */
-.cal-login{min-height:70vh; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:16px; text-align:center;}
-.cal-login .cal-card{width:100%; max-width:340px;}
-.cal-login h1{font-size:18px; font-weight:600; margin:0 0 4px;}
-.cal-login p{font-size:13px; color:var(--muted); margin:0 0 14px;}
 `;

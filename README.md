@@ -2,8 +2,7 @@
 
 A small, installable (PWA) web app that logs meals by photo and/or text,
 estimates calories and macros with Claude, shows what's left for the day, keeps
-a full history, and exports it to Excel. Single user, gated behind one shared
-password.
+a full history, and exports it to Excel. Single user, no sign-in.
 
 Built from the original `calorie-tracker.jsx` artifact. Two things changed from
 the artifact, as required:
@@ -26,24 +25,23 @@ the artifact, as required:
    `app/api/estimate/route.ts` via `process.env`. The browser uploads the photo
    and text to that route; the route calls Anthropic and returns only the parsed
    result.
-2. **The estimate endpoint is protected.** The whole app sits behind a shared
-   password checked in `middleware.ts` (httpOnly session cookie). `/api/estimate`
-   re-verifies the cookie and applies a per-IP **rate limit** so a leaked URL
-   can't run up a bill.
+2. **The estimate endpoint is rate-limited.** The app is open (no sign-in), so
+   `/api/estimate` applies a per-IP **rate limit** — the main guard stopping a
+   stray URL from running up an Anthropic bill. (If you later want a gate, a
+   shared-password middleware can be added back.)
 3. **No secrets in the repo.** Everything sensitive is an env var.
 
 ## Routes
 
 | Method | Route | Purpose |
 | --- | --- | --- |
-| POST | `/api/estimate` | `{ imageBase64?, mediaType?, text }` → `{ label, kcal, protein, carbs, fat, note }` (server-side Anthropic, auth + rate limit) |
+| POST | `/api/estimate` | `{ imageBase64?, mediaType?, text }` → `{ label, kcal, protein, carbs, fat, note }` (server-side Anthropic, rate limited) |
 | GET | `/api/entries?date=YYYY-MM-DD` / `?from=&to=` | entries for a day / range |
 | POST | `/api/entries` | add an entry |
 | DELETE | `/api/entries/:id` | delete an entry |
 | GET / PUT | `/api/settings` | read / update settings |
 | GET / POST | `/api/templates` | list / add favourites |
 | DELETE | `/api/templates/:id` | delete a favourite |
-| POST | `/api/login` / `/api/logout` | session cookie in / out |
 
 ## Pages
 
@@ -54,7 +52,6 @@ the artifact, as required:
 - **`/history`** — past days with totals, target, remaining/over, a per-day bar,
   a date-range selector + presets, per-day averages for kcal and protein, and
   the **Download Excel** button.
-- **`/login`** — the password gate.
 
 ## Local development
 
@@ -65,7 +62,6 @@ npm install
 cp .env.example .env.local
 #   ANTHROPIC_API_KEY=...        (Anthropic Console key)
 #   DATABASE_URL=postgres://...  (Neon/Supabase pooled connection string)
-#   APP_PASSWORD=...             (your shared gate password)
 
 # 2. Create the tables (idempotent). Either:
 npm run db:setup        # runs drizzle/0000_init.sql via the Neon driver
@@ -76,7 +72,8 @@ npm run db:setup        # runs drizzle/0000_init.sql via the Neon driver
 npm run dev             # http://localhost:3000
 ```
 
-Icons are committed, but you can regenerate them with `npm run icons`.
+PWA icons are generated at build time (a `prebuild` hook runs
+`scripts/gen-icons.mjs`); run `npm run icons` to create them on demand for `next dev`.
 
 ## Deploy to Vercel
 
@@ -86,11 +83,10 @@ Icons are committed, but you can regenerate them with `npm run icons`.
 3. In **Project Settings → Environment Variables**, set:
    - `ANTHROPIC_API_KEY`
    - `DATABASE_URL` (from the integration)
-   - `APP_PASSWORD`
 4. Run the migration once against the production database
    (`DATABASE_URL=... npm run db:setup` locally, or `npm run db:push`).
-5. Deploy. Open the URL, sign in with `APP_PASSWORD`, then **Add to Home Screen**
-   on iPhone for an app-like launch.
+5. Deploy. Open the URL, then **Add to Home Screen** on iPhone for an app-like
+   launch.
 
 ## Data model
 

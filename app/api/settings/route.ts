@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { settings } from "@/lib/schema";
-import { isAuthed } from "@/lib/auth-server";
 import type { Settings } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -25,7 +24,6 @@ function toClient(row: typeof settings.$inferSelect): Settings {
 }
 
 export async function GET() {
-  if (!(await isAuthed())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const db = getDb();
   let [row] = await db.select().from(settings).where(eq(settings.id, 1));
   if (!row) {
@@ -36,7 +34,6 @@ export async function GET() {
 }
 
 export async function PUT(req: Request) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
   const b = await req.json().catch(() => ({}));
 
   const values = {

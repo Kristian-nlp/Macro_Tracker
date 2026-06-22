@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { and, asc, eq, gte, lte } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { entries } from "@/lib/schema";
-import { isAuthed } from "@/lib/auth-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -10,8 +9,6 @@ export const dynamic = "force-dynamic";
 const int = (v: unknown) => Math.max(0, Math.round(Number(v) || 0));
 
 export async function GET(req: Request) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-
   const { searchParams } = new URL(req.url);
   const date = searchParams.get("date");
   const from = searchParams.get("from");
@@ -34,8 +31,6 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  if (!(await isAuthed())) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-
   const body = await req.json().catch(() => null);
   if (!body || typeof body.date !== "string" || typeof body.time !== "string") {
     return NextResponse.json({ error: "date and time are required" }, { status: 400 });

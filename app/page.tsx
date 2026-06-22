@@ -230,14 +230,6 @@ export default function TodayPage() {
     persistSettings({ ...settings, [field]: v });
   }
 
-  async function signOut() {
-    try {
-      await fetch("/api/logout", { method: "POST" });
-    } finally {
-      window.location.href = "/login";
-    }
-  }
-
   if (!loaded) {
     return (
       <div
@@ -533,12 +525,6 @@ export default function TodayPage() {
               </ul>
             </>
           )}
-
-          <div style={{ marginTop: 18, textAlign: "right" }}>
-            <button className="cal-btn cal-btn-ghost" onClick={signOut}>
-              Sign out
-            </button>
-          </div>
         </Modal>
       )}
     </>
