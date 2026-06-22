@@ -1,5 +1,5 @@
 // Client-side image downscale (canvas) — runs in the browser before upload to
-// cut payload size and Anthropic cost. Max 1024px on the long edge, JPEG 0.85.
+// cut payload size and API cost. Max 1024px on the long edge, JPEG 0.85.
 
 export type Downscaled = { base64: string; mediaType: string; preview: string };
 

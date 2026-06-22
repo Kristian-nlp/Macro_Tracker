@@ -1,15 +1,14 @@
 import { NextResponse } from "next/server";
-import Anthropic from "@anthropic-ai/sdk";
+import OpenAI from "openai";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
 import type { EstimateResult } from "@/lib/types";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
-// The spec pins this model. Confirmed against the Anthropic docs/skill: it is a
-// current vision-capable model and the base64 image-block shape below matches
-// the documented request format. (Explicit user choice over the default Opus.)
-const MODEL = "claude-sonnet-4-6";
+// Cheap, vision-capable default. Override with OPENAI_MODEL if you want another
+// (e.g. a newer or larger model). Must support image input + JSON output.
+const MODEL = process.env.OPENAI_MODEL || "gpt-4o-mini";
 
 const ALLOWED_MEDIA = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 
@@ -17,7 +16,7 @@ const clampInt = (v: unknown) => Math.max(0, Math.round(Number(v) || 0));
 
 export async function POST(req: Request) {
   // Rate limit per IP. The app is open (no sign-in), so this is the main guard
-  // stopping a stray URL from running up a large Anthropic bill.
+  // stopping a stray URL from running up an OpenAI bill.
   const limit = rateLimit(`estimate:${clientIp(req)}`, 20, 60_000);
   if (!limit.ok) {
     return NextResponse.json(
@@ -26,9 +25,9 @@ export async function POST(req: Request) {
     );
   }
 
-  const apiKey = process.env.ANTHROPIC_API_KEY;
+  const apiKey = process.env.OPENAI_API_KEY;
   if (!apiKey) {
-    return NextResponse.json({ error: "Server not configured (ANTHROPIC_API_KEY)" }, { status: 500 });
+    return NextResponse.json({ error: "Server not configured (OPENAI_API_KEY)" }, { status: 500 });
   }
 
   const body = await req.json().catch(() => null);
@@ -44,7 +43,7 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Provide a description or a photo." }, { status: 400 });
   }
 
-  // 3) Reuse the artifact's prompt, moved server-side.
+  // Reuse the artifact's prompt. (Mentions "JSON", which json_object mode requires.)
   const prompt =
     "You estimate calories and macronutrients of food from a short description and/or a photo. " +
     "Respond with ONLY a compact JSON object, no markdown, no backticks, no commentary. " +
@@ -54,28 +53,24 @@ export async function POST(req: Request) {
     "All macros in grams, integers. If portion size is unclear, assume one typical serving and say so. " +
     `Description: ${text && text.trim() ? text.trim() : "(none, use the photo)"}`;
 
-  const content: Array<Anthropic.ImageBlockParam | Anthropic.TextBlockParam> = [];
+  const content: OpenAI.Chat.Completions.ChatCompletionContentPart[] = [{ type: "text", text: prompt }];
   if (imageBase64) {
     content.push({
-      type: "image",
-      source: { type: "base64", media_type: mediaType as "image/jpeg", data: imageBase64 },
+      type: "image_url",
+      image_url: { url: `data:${mediaType};base64,${imageBase64}` },
     });
   }
-  content.push({ type: "text", text: prompt });
 
   try {
-    const client = new Anthropic({ apiKey });
-    const message = await client.messages.create({
+    const client = new OpenAI({ apiKey });
+    const completion = await client.chat.completions.create({
       model: MODEL,
-      max_tokens: 1000,
+      max_completion_tokens: 1000,
+      response_format: { type: "json_object" },
       messages: [{ role: "user", content }],
     });
 
-    const raw = message.content
-      .filter((b): b is Anthropic.TextBlock => b.type === "text")
-      .map((b) => b.text)
-      .join("\n");
-
+    const raw = completion.choices[0]?.message?.content ?? "";
     const clean = raw.replace(/```json/gi, "").replace(/```/g, "").trim();
     const obj = JSON.parse(clean);
 

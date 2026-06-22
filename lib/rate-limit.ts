@@ -1,5 +1,5 @@
 // Simple per-instance, in-memory sliding-window rate limiter. This is enough to
-// stop a leaked URL from running up a large Anthropic bill in normal use. On
+// stop a leaked URL from running up a large OpenAI bill in normal use. On
 // serverless, memory is per-instance and resets on cold start, so this is a
 // soft cap rather than a hard global limit. For a durable cross-instance limit,
 // wire in Upstash Redis (see UPSTASH_* env vars) behind the same interface.

@@ -1,7 +1,7 @@
 # Daily intake — calorie & macro tracker
 
 A small, installable (PWA) web app that logs meals by photo and/or text,
-estimates calories and macros with Claude, shows what's left for the day, keeps
+estimates calories and macros with OpenAI, shows what's left for the day, keeps
 a full history, and exports it to Excel. Single user, no sign-in.
 
 Built from the original `calorie-tracker.jsx` artifact. Two things changed from
@@ -9,25 +9,26 @@ the artifact, as required:
 
 - `window.storage` is replaced by **Postgres** behind API routes.
 - the model call in `estimate()` moved to a **server-side API route** so the
-  Anthropic key never reaches the browser.
+  OpenAI key never reaches the browser.
 
 ## Stack
 
 - **Next.js (App Router) + TypeScript**, deployed on **Vercel**
 - **Postgres** (Neon or Supabase) via **Drizzle ORM** + the Neon serverless driver
-- **`@anthropic-ai/sdk`** for the server-side estimate (model `claude-sonnet-4-6`)
+- **`openai`** SDK for the server-side estimate (default model `gpt-4o-mini`,
+  override with `OPENAI_MODEL`)
 - **SheetJS (`xlsx`)** for the client-side Excel export
 - **lucide-react** icons; scoped CSS from the artifact (no Tailwind)
 
 ## Hard constraints honoured
 
-1. **API key is server-side only.** `ANTHROPIC_API_KEY` is read only in
+1. **API key is server-side only.** `OPENAI_API_KEY` is read only in
    `app/api/estimate/route.ts` via `process.env`. The browser uploads the photo
-   and text to that route; the route calls Anthropic and returns only the parsed
+   and text to that route; the route calls OpenAI and returns only the parsed
    result.
 2. **The estimate endpoint is rate-limited.** The app is open (no sign-in), so
    `/api/estimate` applies a per-IP **rate limit** — the main guard stopping a
-   stray URL from running up an Anthropic bill. (If you later want a gate, a
+   stray URL from running up an OpenAI bill. (If you later want a gate, a
    shared-password middleware can be added back.)
 3. **No secrets in the repo.** Everything sensitive is an env var.
 
@@ -35,7 +36,7 @@ the artifact, as required:
 
 | Method | Route | Purpose |
 | --- | --- | --- |
-| POST | `/api/estimate` | `{ imageBase64?, mediaType?, text }` → `{ label, kcal, protein, carbs, fat, note }` (server-side Anthropic, rate limited) |
+| POST | `/api/estimate` | `{ imageBase64?, mediaType?, text }` → `{ label, kcal, protein, carbs, fat, note }` (server-side OpenAI, rate limited) |
 | GET | `/api/entries?date=YYYY-MM-DD` / `?from=&to=` | entries for a day / range |
 | POST | `/api/entries` | add an entry |
 | DELETE | `/api/entries/:id` | delete an entry |
@@ -60,7 +61,7 @@ npm install
 
 # 1. Create .env.local from the example and fill it in
 cp .env.example .env.local
-#   ANTHROPIC_API_KEY=...        (Anthropic Console key)
+#   OPENAI_API_KEY=...           (OpenAI API key)
 #   DATABASE_URL=postgres://...  (Neon/Supabase pooled connection string)
 
 # 2. Create the tables (idempotent). Either:
@@ -81,7 +82,7 @@ PWA icons are generated at build time (a `prebuild` hook runs
 2. Add a Postgres database — the **Neon** or **Supabase** Vercel integration
    sets `DATABASE_URL` for you (use the pooled connection string).
 3. In **Project Settings → Environment Variables**, set:
-   - `ANTHROPIC_API_KEY`
+   - `OPENAI_API_KEY`
    - `DATABASE_URL` (from the integration)
 4. Run the migration once against the production database
    (`DATABASE_URL=... npm run db:setup` locally, or `npm run db:push`).
