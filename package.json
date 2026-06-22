@@ -1,0 +1,34 @@
+{
+  "name": "macro-tracker",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Single-user calorie and macro tracker. Logs meals by photo and/or text, estimates calories and macros server-side, tracks history, and exports to Excel.",
+  "scripts": {
+    "dev": "next dev",
+    "prebuild": "node scripts/gen-icons.mjs",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:setup": "node scripts/setup-db.mjs",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "icons": "node scripts/gen-icons.mjs"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.30.1",
+    "@neondatabase/serverless": "^0.9.5",
+    "drizzle-orm": "^0.33.0",
+    "lucide-react": "^0.441.0",
+    "next": "^14.2.15",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/node": "^20.16.10",
+    "@types/react": "^18.3.11",
+    "@types/react-dom": "^18.3.0",
+    "drizzle-kit": "^0.24.2",
+    "typescript": "^5.6.2"
+  }
+}
