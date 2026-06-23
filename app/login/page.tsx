@@ -21,6 +21,7 @@ export default function LoginPage() {
   const [err, setErr] = useState("");
   const [pinFocused, setPinFocused] = useState(false);
   const [step, setStep] = useState<"auth" | "targets">("auth");
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [trainingKcal, setTrainingKcal] = useState("");
   const [restKcal, setRestKcal] = useState("");
   const userRef = useRef<HTMLInputElement>(null);
@@ -29,6 +30,11 @@ export default function LoginPage() {
   function enterApp() {
     router.replace("/");
     router.refresh();
+  }
+
+  function switchMode(next: "signin" | "signup") {
+    setMode(next);
+    setErr("");
   }
 
   async function submit(e: React.FormEvent) {
@@ -42,12 +48,12 @@ export default function LoginPage() {
       const res = await fetch("/api/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ username, pin }),
+        body: JSON.stringify({ username, pin, mode }),
       });
       if (res.ok) {
         const data = await res.json().catch(() => ({}));
         if (data?.created) {
-          // First-time user → ask for their daily calorie targets.
+          // New account → ask for their daily calorie targets.
           setBusy(false);
           setStep("targets");
         } else {
@@ -55,11 +61,15 @@ export default function LoginPage() {
         }
       } else {
         setErr(
-          res.status === 401
-            ? t("errWrongPin")
-            : res.status === 429
-              ? t("errTooMany")
-              : t("errLoginGeneric"),
+          res.status === 409
+            ? t("errUsernameTaken")
+            : res.status === 404
+              ? t("errNoAccount")
+              : res.status === 401
+                ? t("errWrongPin")
+                : res.status === 429
+                  ? t("errTooMany")
+                  : t("errLoginGeneric"),
         );
         setBusy(false);
       }
@@ -207,7 +217,9 @@ export default function LoginPage() {
         <h1 className="g-fg" style={{ fontWeight: 700, fontSize: 42, color: "#1B1D17", letterSpacing: "-.03em", margin: "26px 0 0" }}>
           macro<span style={{ color: "#55654C" }}>.</span>
         </h1>
-        <p style={{ fontSize: 15, color: "#6B6E60", margin: "12px 0 0", lineHeight: 1.55, maxWidth: 270 }}>{t("tagline")}</p>
+        <p style={{ fontSize: 15, color: "#6B6E60", margin: "12px 0 0", lineHeight: 1.55, maxWidth: 270 }}>
+          {mode === "signup" ? t("signupSubtitle") : t("tagline")}
+        </p>
       </div>
 
       <div style={{ flex: 1 }} />
@@ -285,19 +297,21 @@ export default function LoginPage() {
             <>
               <Loader2 size={16} className="g-spin" /> {t("signingIn")}
             </>
+          ) : mode === "signup" ? (
+            t("createAccountBtn")
           ) : (
             t("signIn")
           )}
         </button>
 
         <div style={{ textAlign: "center", marginTop: 18, fontSize: 13.5, color: "#6B6E60" }}>
-          {t("newHere")}{" "}
+          {mode === "signup" ? t("haveAccount") : t("newHere")}{" "}
           <button
             type="button"
-            onClick={() => userRef.current?.focus()}
+            onClick={() => switchMode(mode === "signup" ? "signin" : "signup")}
             style={{ color: "#55654C", fontWeight: 600, background: "none", border: "none", padding: 0, font: "inherit" }}
           >
-            {t("createAccount")}
+            {mode === "signup" ? t("signIn") : t("createAccount")}
           </button>
         </div>
       </div>

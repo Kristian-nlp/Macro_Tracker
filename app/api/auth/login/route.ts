@@ -30,28 +30,35 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => null);
   const username = normalizeUsername(body?.username);
   const pin = String(body?.pin ?? "");
+  // "signup" creates a new account (errors if the username is taken); "signin"
+  // authenticates an existing one (errors if there's no such account).
+  const mode = body?.mode === "signup" ? "signup" : "signin";
   if (!username) return NextResponse.json({ error: "Enter a username." }, { status: 400 });
   if (!isValidPin(pin)) return NextResponse.json({ error: "PIN must be 4 digits." }, { status: 400 });
 
   const db = getDb();
   const found = await db.select().from(users).where(eq(users.username, username));
+  const exists = found.length > 0;
 
-  let created = false;
-  if (found.length) {
-    // Existing user — verify the PIN.
-    if (!verifyPin(pin, found[0].pinSalt, found[0].pinHash)) {
-      return NextResponse.json({ error: "Wrong PIN for that username." }, { status: 401 });
+  if (mode === "signup") {
+    if (exists) {
+      return NextResponse.json({ error: "username_taken" }, { status: 409 });
     }
-  } else {
-    // New username — register it with this PIN and seed a settings row.
+    // Register the new username and seed a settings row.
     const salt = makeSalt();
     await db.insert(users).values({ username, pinSalt: salt, pinHash: hashPin(pin, salt) });
     await db.insert(settings).values({ username }).onConflictDoNothing();
-    created = true;
+  } else {
+    if (!exists) {
+      return NextResponse.json({ error: "no_account" }, { status: 404 });
+    }
+    if (!verifyPin(pin, found[0].pinSalt, found[0].pinHash)) {
+      return NextResponse.json({ error: "wrong_pin" }, { status: 401 });
+    }
   }
 
   // `created` lets the client run first-time onboarding (set daily targets).
-  const res = NextResponse.json({ username, created });
+  const res = NextResponse.json({ username, created: mode === "signup" });
   res.cookies.set(COOKIE_NAME, signSession(username), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
