@@ -1,15 +1,29 @@
-// The vessel hero — a graduated "tank" that fills toward the day's kcal target,
-// with a small overflow band when you go over. Ported verbatim from the artifact.
+// A graduated "tank" that fills toward a target, with a small overflow band when
+// you go over. Reusable at any size — the big day vessel and the small per-macro
+// vessels both render this.
 
-export function Vessel({ ratio, over }: { ratio: number; over: number }) {
-  const W = 84;
-  const H = 230;
-  const pad = 6;
+export function Vessel({
+  ratio,
+  over,
+  width = 84,
+  height = 230,
+  ticks = true,
+}: {
+  ratio: number;
+  over: number;
+  width?: number;
+  height?: number;
+  ticks?: boolean;
+}) {
+  const W = width;
+  const H = height;
+  const pad = Math.max(4, Math.round(width * 0.07));
+  const rx = Math.min(12, Math.round(width * 0.22));
   const innerH = H - pad * 2;
   const fillFrac = Math.min(1, ratio);
   const fillH = innerH * fillFrac;
   const overH = over > 0 ? innerH * Math.min(0.16, over) : 0; // small overflow band
-  const ticks = [0.25, 0.5, 0.75];
+  const tickFracs = [0.25, 0.5, 0.75];
 
   return (
     <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} className="cal-vessel" aria-hidden="true">
@@ -19,7 +33,7 @@ export function Vessel({ ratio, over }: { ratio: number; over: number }) {
         y={pad}
         width={W - pad * 2}
         height={innerH}
-        rx="12"
+        rx={rx}
         fill="var(--surface-2)"
         stroke="var(--line-strong)"
         strokeWidth="1.5"
@@ -30,7 +44,7 @@ export function Vessel({ ratio, over }: { ratio: number; over: number }) {
         y={pad + innerH - fillH}
         width={W - pad * 2}
         height={fillH}
-        rx="12"
+        rx={rx}
         className="cal-fill"
         fill="var(--accent)"
       />
@@ -41,7 +55,7 @@ export function Vessel({ ratio, over }: { ratio: number; over: number }) {
           y={pad + innerH - fillH - overH}
           width={W - pad * 2}
           height={overH}
-          rx="12"
+          rx={rx}
           fill="var(--over)"
         />
       )}
@@ -56,17 +70,18 @@ export function Vessel({ ratio, over }: { ratio: number; over: number }) {
         strokeDasharray="3 3"
       />
       {/* graduations */}
-      {ticks.map((t, i) => (
-        <line
-          key={i}
-          x1={W - pad}
-          y1={pad + innerH * (1 - t)}
-          x2={W - pad - 9}
-          y2={pad + innerH * (1 - t)}
-          stroke="var(--line-strong)"
-          strokeWidth="1"
-        />
-      ))}
+      {ticks &&
+        tickFracs.map((t, i) => (
+          <line
+            key={i}
+            x1={W - pad}
+            y1={pad + innerH * (1 - t)}
+            x2={W - pad - 9}
+            y2={pad + innerH * (1 - t)}
+            stroke="var(--line-strong)"
+            strokeWidth="1"
+          />
+        ))}
     </svg>
   );
 }
