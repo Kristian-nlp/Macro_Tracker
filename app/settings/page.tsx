@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, Trash2 } from "lucide-react";
 import { MacroShape } from "@/components/MacroMarker";
 import { BottomNav } from "@/components/BottomNav";
 import { useLang } from "@/components/LangProvider";
@@ -65,6 +65,9 @@ export default function SettingsPage() {
   const [favCount, setFavCount] = useState(0);
   const [exporting, setExporting] = useState(false);
   const [macroDay, setMacroDay] = useState<DayType>("training"); // which set the macro targets edit
+  const [confirmDelete, setConfirmDelete] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [delErr, setDelErr] = useState("");
 
   useEffect(() => {
     (async () => {
@@ -116,6 +119,19 @@ export default function SettingsPage() {
       await fetch("/api/auth/logout", { method: "POST" });
     } finally {
       window.location.href = "/login";
+    }
+  }
+
+  async function confirmAndDelete() {
+    if (deleting) return;
+    setDeleting(true);
+    setDelErr("");
+    try {
+      await api.deleteAccount();
+      window.location.href = "/login";
+    } catch {
+      setDeleting(false);
+      setDelErr(t("errSomething"));
     }
   }
 
@@ -223,8 +239,39 @@ export default function SettingsPage() {
           </button>
         </div>
 
-        <button className="g-signout" onClick={signOut} style={{ margin: "22px 0 8px" }}>{t("signOut")}</button>
+        <button className="g-signout" onClick={signOut} style={{ margin: "22px 0 6px" }}>{t("signOut")}</button>
+        <button
+          onClick={() => { setDelErr(""); setConfirmDelete(true); }}
+          style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 6, width: "100%", background: "none", border: "none", color: "#B0846A", fontFamily: "var(--fg)", fontWeight: 500, fontSize: 13, padding: 8 }}
+        >
+          <Trash2 size={14} /> {t("deleteAccount")}
+        </button>
       </div>
+
+      {/* delete-account confirmation */}
+      {confirmDelete && (
+        <div
+          onClick={() => !deleting && setConfirmDelete(false)}
+          style={{ position: "fixed", inset: 0, background: "rgba(24,26,20,.46)", backdropFilter: "blur(2px)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 60, padding: 24 }}
+        >
+          <div onClick={(e) => e.stopPropagation()} style={{ background: "#FCFAF4", width: "100%", maxWidth: 360, borderRadius: 22, padding: 24, border: "1px solid #E8E4D6" }}>
+            <div className="g-fg" style={{ fontWeight: 700, fontSize: 20, color: "#1B1D17", letterSpacing: "-.01em" }}>{t("deleteConfirmTitle")}</div>
+            <p style={{ fontSize: 14, color: "#6B6E60", lineHeight: 1.5, margin: "10px 0 0" }}>{t("deleteConfirmBody")}</p>
+            {delErr && <div className="g-err">{delErr}</div>}
+            <button
+              className="g-btn"
+              onClick={confirmAndDelete}
+              disabled={deleting}
+              style={{ background: "#BC6440", color: "var(--paper)", marginTop: 20, opacity: deleting ? 0.6 : 1 }}
+            >
+              {deleting ? (<><Loader2 size={16} className="g-spin" /> {t("deleting")}</>) : t("deleteConfirmYes")}
+            </button>
+            <button className="g-btn g-btn-ghost" onClick={() => setConfirmDelete(false)} disabled={deleting} style={{ marginTop: 4 }}>
+              {t("cancel")}
+            </button>
+          </div>
+        </div>
+      )}
 
       <div className="g-footer">
         <BottomNav active="settings" labels={{ today: t("backToday"), history: t("historyTitle"), settings: t("settingsTitle"), add: t("addMeal") }} />

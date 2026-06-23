@@ -30,6 +30,7 @@ async function sendJSON<T>(url: string, method: string, body?: unknown): Promise
 export const api = {
   // account
   getMe: () => getJSON<{ username: string }>("/api/auth/me"),
+  deleteAccount: () => sendJSON<{ ok: true }>("/api/account", "DELETE"),
 
   // entries
   getEntriesForDate: (date: string) => getJSON<Entry[]>(`/api/entries?date=${date}`),
