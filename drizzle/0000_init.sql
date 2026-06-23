@@ -16,8 +16,13 @@ CREATE INDEX IF NOT EXISTS "entries_date_idx" ON "entries" ("date");
 CREATE TABLE IF NOT EXISTS "settings" (
   "id" integer PRIMARY KEY NOT NULL,
   "target" integer,
+  "training_protein" integer,
+  "training_carbs" integer,
+  "training_fat" integer,
   "rest_target" integer,
-  "protein_target" integer,
+  "rest_protein" integer,
+  "rest_carbs" integer,
+  "rest_fat" integer,
   "training_days" jsonb DEFAULT '[1,3,5,0]'::jsonb NOT NULL,
   "overrides" jsonb DEFAULT '{}'::jsonb NOT NULL
 );

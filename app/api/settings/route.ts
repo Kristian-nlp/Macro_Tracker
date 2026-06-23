@@ -16,8 +16,13 @@ const numOrNull = (v: unknown) => {
 function toClient(row: typeof settings.$inferSelect): Settings {
   return {
     target: row.target,
+    trainingProtein: row.trainingProtein,
+    trainingCarbs: row.trainingCarbs,
+    trainingFat: row.trainingFat,
     restTarget: row.restTarget,
-    proteinTarget: row.proteinTarget,
+    restProtein: row.restProtein,
+    restCarbs: row.restCarbs,
+    restFat: row.restFat,
     trainingDays: Array.isArray(row.trainingDays) ? row.trainingDays : [1, 3, 5, 0],
     overrides: row.overrides && typeof row.overrides === "object" ? row.overrides : {},
   };
@@ -38,8 +43,13 @@ export async function PUT(req: Request) {
 
   const values = {
     target: numOrNull(b.target),
+    trainingProtein: numOrNull(b.trainingProtein),
+    trainingCarbs: numOrNull(b.trainingCarbs),
+    trainingFat: numOrNull(b.trainingFat),
     restTarget: numOrNull(b.restTarget),
-    proteinTarget: numOrNull(b.proteinTarget),
+    restProtein: numOrNull(b.restProtein),
+    restCarbs: numOrNull(b.restCarbs),
+    restFat: numOrNull(b.restFat),
     trainingDays: Array.isArray(b.trainingDays)
       ? b.trainingDays.map((n: unknown) => Math.round(Number(n))).filter((n: number) => n >= 0 && n <= 6)
       : [1, 3, 5, 0],

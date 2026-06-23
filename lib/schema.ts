@@ -23,9 +23,16 @@ export const entries = pgTable(
 /** Single-row settings (id is always 1). */
 export const settings = pgTable("settings", {
   id: integer("id").primaryKey(),
-  target: integer("target"), // training-day kcal target (nullable: set in app)
-  restTarget: integer("rest_target"),
-  proteinTarget: integer("protein_target"),
+  // Training-day targets (all nullable: set in app, no hardcoded targets)
+  target: integer("target"), // training-day kcal target
+  trainingProtein: integer("training_protein"),
+  trainingCarbs: integer("training_carbs"),
+  trainingFat: integer("training_fat"),
+  // Rest-day targets
+  restTarget: integer("rest_target"), // rest-day kcal target
+  restProtein: integer("rest_protein"),
+  restCarbs: integer("rest_carbs"),
+  restFat: integer("rest_fat"),
   // Weekday numbers, 0 = Sunday. Default training days: Mon/Wed/Fri/Sun.
   trainingDays: jsonb("training_days").$type<number[]>().notNull().default([1, 3, 5, 0]),
   // Per-date day-type overrides: { "YYYY-MM-DD": "training" | "rest" }.

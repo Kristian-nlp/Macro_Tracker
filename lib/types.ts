@@ -11,9 +11,16 @@ export type Entry = {
 };
 
 export type Settings = {
-  target: number | null;
-  restTarget: number | null;
-  proteinTarget: number | null;
+  // Training day targets
+  target: number | null; // kcal
+  trainingProtein: number | null;
+  trainingCarbs: number | null;
+  trainingFat: number | null;
+  // Rest day targets
+  restTarget: number | null; // kcal (falls back to `target` when null)
+  restProtein: number | null;
+  restCarbs: number | null;
+  restFat: number | null;
   trainingDays: number[];
   overrides: Record<string, string>;
 };

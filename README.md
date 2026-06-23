@@ -93,10 +93,11 @@ PWA icons are generated at build time (a `prebuild` hook runs
 
 - **entries** — `id`, `date` (YYYY-MM-DD, local), `time` (HH:MM), `label`,
   `kcal`, `protein`, `carbs`, `fat`, `note?`, `created_at`; indexed on `date`.
-- **settings** (single row) — `target`, `rest_target`, `protein_target`
-  (all nullable, set in the app — no hardcoded targets), `training_days`
-  (weekday numbers, 0 = Sunday; default `[1,3,5,0]`), and `overrides`
-  (per-date day-type overrides).
+- **settings** (single row) — training-day targets `target` (kcal),
+  `training_protein`, `training_carbs`, `training_fat`; rest-day targets
+  `rest_target` (kcal), `rest_protein`, `rest_carbs`, `rest_fat` (all nullable,
+  set in the app — no hardcoded targets); `training_days` (weekday numbers,
+  0 = Sunday; default `[1,3,5,0]`); and `overrides` (per-date day-type overrides).
 - **templates** — `id`, `name`, `kcal`, `protein`, `carbs`, `fat`.
 
 ## Notes
@@ -112,3 +113,7 @@ PWA icons are generated at build time (a `prebuild` hook runs
 - The optional "nightly auto-export" extension (Vercel Cron + Blob/Resend) is
   not built; the manual Download Excel on the History page covers the day-to-day
   need.
+- **Schema changes:** migrations live in `drizzle/` and are additive/idempotent.
+  After pulling a change that adds columns, re-run `npm run db:setup` (it applies
+  every file in `drizzle/`) or run the new `drizzle/000N_*.sql` against your
+  database.

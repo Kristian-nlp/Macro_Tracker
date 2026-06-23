@@ -10,8 +10,13 @@ import type { DayType, Entry, Settings } from "@/lib/types";
 
 const DEFAULT_SETTINGS: Settings = {
   target: null,
+  trainingProtein: null,
+  trainingCarbs: null,
+  trainingFat: null,
   restTarget: null,
-  proteinTarget: null,
+  restProtein: null,
+  restCarbs: null,
+  restFat: null,
   trainingDays: [1, 3, 5, 0],
   overrides: {},
 };

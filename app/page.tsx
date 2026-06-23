@@ -22,11 +22,27 @@ import type { DayType, Entry, Settings, Template } from "@/lib/types";
 
 const DEFAULT_SETTINGS: Settings = {
   target: null,
+  trainingProtein: null,
+  trainingCarbs: null,
+  trainingFat: null,
   restTarget: null,
-  proteinTarget: null,
+  restProtein: null,
+  restCarbs: null,
+  restFat: null,
   trainingDays: [1, 3, 5, 0],
   overrides: {},
 };
+
+// Numeric settings fields editable in the Settings drawer.
+type NumField =
+  | "target"
+  | "trainingProtein"
+  | "trainingCarbs"
+  | "trainingFat"
+  | "restTarget"
+  | "restProtein"
+  | "restCarbs"
+  | "restFat";
 
 type Draft = {
   label: string;
@@ -91,6 +107,12 @@ export default function TodayPage() {
   const remaining = hasTarget ? (target as number) - eaten : null;
   const ratio = hasTarget ? eaten / (target as number) : 0;
   const over = hasTarget && eaten > (target as number) ? (eaten - (target as number)) / (target as number) : 0;
+
+  // Active macro targets follow the day type.
+  const macroTargets =
+    todayType === "rest"
+      ? { protein: settings.restProtein, carbs: settings.restCarbs, fat: settings.restFat }
+      : { protein: settings.trainingProtein, carbs: settings.trainingCarbs, fat: settings.trainingFat };
 
   // mutations
   function persistSettings(next: Settings) {
@@ -229,10 +251,23 @@ export default function TodayPage() {
     persistSettings({ ...settings, trainingDays: set });
   }
 
-  function setNum(field: "target" | "restTarget" | "proteinTarget", raw: string) {
+  function setNum(field: NumField, raw: string) {
     const v = raw === "" ? null : Math.max(0, Math.round(Number(raw) || 0));
     persistSettings({ ...settings, [field]: v });
   }
+
+  const targetRow = (label: string, field: NumField, placeholder = "optional") => (
+    <div className="cal-srow" key={field}>
+      <label>{label}</label>
+      <input
+        className="cal-sinput"
+        inputMode="numeric"
+        value={settings[field] ?? ""}
+        onChange={(e) => setNum(field, e.target.value)}
+        placeholder={placeholder}
+      />
+    </div>
+  );
 
   if (!loaded) {
     return (
@@ -305,9 +340,9 @@ export default function TodayPage() {
 
           <div className="cal-hero-bottom">
             <div className="cal-macros">
-              <Macro label="Protein" val={pSum} target={settings.proteinTarget} />
-              <Macro label="Carbs" val={cSum} />
-              <Macro label="Fat" val={fSum} />
+              <Macro label="Protein" val={pSum} target={macroTargets.protein} />
+              <Macro label="Carbs" val={cSum} target={macroTargets.carbs} />
+              <Macro label="Fat" val={fSum} target={macroTargets.fat} />
             </div>
             <button className="cal-hero-settings" onClick={() => setShowSettings(true)}>
               <SettingsIcon size={13} /> Settings
@@ -448,38 +483,20 @@ export default function TodayPage() {
       {showSettings && (
         <Modal title="Settings" onClose={() => setShowSettings(false)}>
           <div className="cal-eyebrow" style={{ marginBottom: 8 }}>
-            Daily targets (kcal)
+            Training day targets
           </div>
-          <div className="cal-srow">
-            <label>Training day</label>
-            <input
-              className="cal-sinput"
-              inputMode="numeric"
-              value={settings.target ?? ""}
-              onChange={(e) => setNum("target", e.target.value)}
-              placeholder="—"
-            />
+          {targetRow("Calories (kcal)", "target", "—")}
+          {targetRow("Protein (g)", "trainingProtein")}
+          {targetRow("Carbs (g)", "trainingCarbs")}
+          {targetRow("Fat (g)", "trainingFat")}
+
+          <div className="cal-eyebrow" style={{ margin: "18px 0 8px" }}>
+            Rest day targets
           </div>
-          <div className="cal-srow">
-            <label>Rest day</label>
-            <input
-              className="cal-sinput"
-              inputMode="numeric"
-              value={settings.restTarget ?? ""}
-              onChange={(e) => setNum("restTarget", e.target.value)}
-              placeholder="same as training"
-            />
-          </div>
-          <div className="cal-srow">
-            <label>Protein goal (g)</label>
-            <input
-              className="cal-sinput"
-              inputMode="numeric"
-              value={settings.proteinTarget ?? ""}
-              onChange={(e) => setNum("proteinTarget", e.target.value)}
-              placeholder="optional"
-            />
-          </div>
+          {targetRow("Calories (kcal)", "restTarget", "same as training")}
+          {targetRow("Protein (g)", "restProtein")}
+          {targetRow("Carbs (g)", "restCarbs")}
+          {targetRow("Fat (g)", "restFat")}
 
           <div className="cal-eyebrow" style={{ margin: "18px 0 8px" }}>
             Training days
