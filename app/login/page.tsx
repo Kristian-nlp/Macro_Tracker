@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { MacroShape } from "@/components/MacroMarker";
 import { useLang } from "@/components/LangProvider";
+import { api } from "@/lib/api";
+import type { Settings } from "@/lib/types";
 
 // Sign in — username + 4-digit PIN (the app's existing auth; no email). The
 // three macro shapes double as the logo. New usernames are created on first
@@ -18,8 +20,16 @@ export default function LoginPage() {
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
   const [pinFocused, setPinFocused] = useState(false);
+  const [step, setStep] = useState<"auth" | "targets">("auth");
+  const [trainingKcal, setTrainingKcal] = useState("");
+  const [restKcal, setRestKcal] = useState("");
   const userRef = useRef<HTMLInputElement>(null);
   const pinRef = useRef<HTMLInputElement>(null);
+
+  function enterApp() {
+    router.replace("/");
+    router.refresh();
+  }
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -35,8 +45,14 @@ export default function LoginPage() {
         body: JSON.stringify({ username, pin }),
       });
       if (res.ok) {
-        router.replace("/");
-        router.refresh();
+        const data = await res.json().catch(() => ({}));
+        if (data?.created) {
+          // First-time user → ask for their daily calorie targets.
+          setBusy(false);
+          setStep("targets");
+        } else {
+          enterApp();
+        }
       } else {
         setErr(
           res.status === 401
@@ -51,6 +67,34 @@ export default function LoginPage() {
       setErr(t("errSomething"));
       setBusy(false);
     }
+  }
+
+  async function finishTargets(e: React.FormEvent) {
+    e.preventDefault();
+    if (busy) return;
+    setBusy(true);
+    const num = (s: string) => {
+      const n = Math.round(Number(s) || 0);
+      return n > 0 ? n : null;
+    };
+    const next: Settings = {
+      target: num(trainingKcal),
+      trainingProtein: null,
+      trainingCarbs: null,
+      trainingFat: null,
+      restTarget: num(restKcal),
+      restProtein: null,
+      restCarbs: null,
+      restFat: null,
+      trainingDays: [1, 3, 5, 0],
+      overrides: {},
+    };
+    try {
+      await api.putSettings(next);
+    } catch {
+      /* non-fatal — targets can still be set in Settings */
+    }
+    enterApp();
   }
 
   const overline: React.CSSProperties = {
@@ -70,6 +114,75 @@ export default function LoginPage() {
     color: "#1B1D17",
     width: "100%",
   };
+
+  // ---- first-time onboarding: ask for training / rest calorie targets ----
+  if (step === "targets") {
+    const kcalField = (
+      value: string,
+      onChange: (v: string) => void,
+      label: string,
+      placeholder: string,
+      autoFocus = false,
+    ) => (
+      <div style={{ ...field, display: "flex", alignItems: "center", gap: 8, padding: "4px 14px" }}>
+        <input
+          value={value}
+          onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 5))}
+          inputMode="numeric"
+          autoFocus={autoFocus}
+          placeholder={placeholder}
+          aria-label={label}
+          className="g-fm"
+          style={{ flex: 1, minWidth: 0, border: "none", background: "none", outline: "none", fontSize: 15, color: "#1B1D17", padding: "10px 0" }}
+        />
+        <span style={{ color: "#9A9C8F", fontSize: 13 }}>{t("xlKcal")}</span>
+      </div>
+    );
+
+    return (
+      <form onSubmit={finishTargets} style={{ display: "flex", flexDirection: "column", minHeight: "100dvh", padding: "0 32px 40px" }}>
+        <div style={{ marginTop: 96 }}>
+          <div style={{ display: "flex", gap: 11, alignItems: "center" }}>
+            <MacroShape macro="protein" size={18} />
+            <MacroShape macro="carbs" size={17} />
+            <MacroShape macro="fat" size={17} />
+          </div>
+          <h1 className="g-fg" style={{ fontWeight: 700, fontSize: 30, color: "#1B1D17", letterSpacing: "-.02em", margin: "26px 0 0" }}>
+            {t("onbTitle")}
+          </h1>
+          <p style={{ fontSize: 15, color: "#6B6E60", margin: "12px 0 0", lineHeight: 1.55, maxWidth: 300 }}>{t("onbSubtitle")}</p>
+        </div>
+
+        <div style={{ flex: 1 }} />
+
+        <div>
+          <div style={overline}>{t("trainingDayRow")}</div>
+          {kcalField(trainingKcal, setTrainingKcal, t("trainingDayRow"), "2600", true)}
+          <div style={{ ...overline, margin: "16px 0 8px" }}>{t("restDayRow")}</div>
+          {kcalField(restKcal, setRestKcal, t("restDayRow"), "2200")}
+
+          <button className="g-btn g-btn-pri" type="submit" disabled={busy} style={{ marginTop: 24 }}>
+            {busy ? (
+              <>
+                <Loader2 size={16} className="g-spin" /> {t("signingIn")}
+              </>
+            ) : (
+              t("onbGetStarted")
+            )}
+          </button>
+          <div style={{ textAlign: "center", marginTop: 12 }}>
+            <button
+              type="button"
+              onClick={enterApp}
+              style={{ color: "#6B6E60", fontWeight: 600, background: "none", border: "none", padding: 8, font: "inherit", fontSize: 13.5 }}
+            >
+              {t("onbSkip")}
+            </button>
+          </div>
+        </div>
+      </form>
+    );
+  }
 
   return (
     <form onSubmit={submit} style={{ display: "flex", flexDirection: "column", minHeight: "100dvh", padding: "0 32px 40px" }}>

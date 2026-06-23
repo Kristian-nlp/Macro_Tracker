@@ -36,6 +36,7 @@ export async function POST(req: Request) {
   const db = getDb();
   const found = await db.select().from(users).where(eq(users.username, username));
 
+  let created = false;
   if (found.length) {
     // Existing user — verify the PIN.
     if (!verifyPin(pin, found[0].pinSalt, found[0].pinHash)) {
@@ -46,9 +47,11 @@ export async function POST(req: Request) {
     const salt = makeSalt();
     await db.insert(users).values({ username, pinSalt: salt, pinHash: hashPin(pin, salt) });
     await db.insert(settings).values({ username }).onConflictDoNothing();
+    created = true;
   }
 
-  const res = NextResponse.json({ username });
+  // `created` lets the client run first-time onboarding (set daily targets).
+  const res = NextResponse.json({ username, created });
   res.cookies.set(COOKIE_NAME, signSession(username), {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
