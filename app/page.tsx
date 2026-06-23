@@ -424,8 +424,7 @@ export default function TodayPage() {
             <div className="g-sheet-body" style={{ paddingBottom: 26 }}>
               {/* capture card */}
               <div style={{ background: "#FCFAF4", border: "1px solid #E4E0D2", borderRadius: 18, padding: 16, marginTop: 8 }}>
-                {overline(t("snapDescribe"))}
-                <div style={{ display: "flex", gap: 10, marginTop: 13 }}>
+                <div style={{ display: "flex", gap: 10 }}>
                   {img && (
                     <div style={{ position: "relative", width: 64, height: 64, flex: "none", borderRadius: 14, overflow: "hidden", border: "1px solid #DBD7C9" }}>
                       {/* eslint-disable-next-line @next/next/no-img-element */}

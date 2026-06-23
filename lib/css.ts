@@ -35,7 +35,7 @@ export const CSS = `
 }
 html,body{margin:0; padding:0; background:#F4F1E8;}
 .cal-app *{box-sizing:border-box;}
-.cal-app button{font-family:inherit; cursor:pointer; color:inherit;}
+.cal-app button{font-family:inherit; cursor:pointer;}
 .cal-app input,.cal-app textarea{font-family:inherit;}
 .cal-app a{color:inherit; text-decoration:none;}
 .cal-app :focus-visible{outline:2px solid var(--sage); outline-offset:2px; border-radius:8px;}
@@ -54,7 +54,7 @@ html,body{margin:0; padding:0; background:#F4F1E8;}
 /* ---- bottom nav ---- */
 .g-nav{display:flex; align-items:flex-end; justify-content:space-around; height:84px; padding:10px 20px 16px; background:var(--paper); border-top:1px solid #E3E0D2;}
 .g-nav-item{display:flex; flex-direction:column; align-items:center; gap:5px; flex:1; background:none; border:none; padding:0; color:#A0A294; transition:color .15s ease;}
-.g-nav-item.is-active{color:var(--ink);}
+.g-nav-item.is-active{color:var(--sage);}
 .g-nav-item span{font-size:10px; letter-spacing:.05em; font-weight:600;}
 .g-nav-plus{display:flex; flex-direction:column; align-items:center; flex:1;}
 .g-nav-plus-btn{width:54px; height:54px; border-radius:50%; background:var(--sage); display:grid; place-items:center; border:none; margin-top:-26px; box-shadow:0 12px 22px -8px rgba(85,101,76,.6);}
@@ -73,7 +73,7 @@ html,body{margin:0; padding:0; background:#F4F1E8;}
 
 /* ---- buttons ---- */
 .g-btn{display:flex; align-items:center; justify-content:center; gap:8px; width:100%; border-radius:14px; padding:16px; font-family:var(--fg); font-weight:600; font-size:15px; border:1px solid transparent; transition:background .15s ease, border-color .15s ease, opacity .15s ease;}
-.g-btn-pri{background:var(--sage); color:#fff; box-shadow:0 12px 24px -10px rgba(85,101,76,.6);}
+.g-btn-pri{background:var(--sage); color:var(--paper); box-shadow:0 12px 24px -10px rgba(85,101,76,.6);}
 .g-btn-pri:hover:not(:disabled){background:var(--sage-deep);}
 .g-btn-pri:disabled{opacity:.5; box-shadow:none; cursor:default;}
 .g-btn-ghost{background:none; color:var(--muted); border:none; font-size:13.5px; padding:12px; font-weight:600;}
@@ -110,10 +110,10 @@ textarea.g-input{resize:none; font-family:var(--fg);}
 
 /* ---- segmented controls ---- */
 .g-portion{font-family:var(--fm); font-size:13px; color:var(--muted); border:1px solid #D7D3C5; border-radius:9px; padding:6px 11px; background:none;}
-.g-portion.is-on{color:#fff; background:var(--sage); border-color:var(--sage); padding:6px 13px;}
+.g-portion.is-on{color:var(--paper); background:var(--sage); border-color:var(--sage); padding:6px 13px;}
 .g-daytype{display:flex; background:#EDEADF; border-radius:10px; padding:3px;}
 .g-daytype button{font-family:var(--fg); font-size:13px; font-weight:600; color:#7A7E6F; padding:6px 14px; border:none; background:none; border-radius:8px;}
-.g-daytype button.is-on{color:#fff; background:var(--sage);}
+.g-daytype button.is-on{color:var(--paper); background:var(--sage);}
 
 /* ---- macro progress bar (Today macro cards) ---- */
 .g-mbar{height:5px; border-radius:3px; background:#EAE7D9; overflow:hidden; margin-top:9px;}
