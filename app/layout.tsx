@@ -1,9 +1,25 @@
 import type { Metadata, Viewport } from "next";
 import { cookies } from "next/headers";
+import { Space_Grotesk, Space_Mono } from "next/font/google";
 import { CSS, wrap } from "@/lib/css";
 import { RegisterSW } from "@/components/RegisterSW";
 import { LangProvider } from "@/components/LangProvider";
 import { LANG_COOKIE, type Lang } from "@/lib/i18n";
+
+// "The Grid" type system: Space Grotesk for display/headings/numbers, Space Mono
+// for tabular data. Exposed as CSS variables consumed by lib/css.ts tokens.
+const grotesk = Space_Grotesk({
+  subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  variable: "--font-grotesk",
+  display: "swap",
+});
+const mono = Space_Mono({
+  subsets: ["latin"],
+  weight: ["400", "700"],
+  variable: "--font-mono",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: "Daily intake",
@@ -36,7 +52,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   const lang: Lang = cookies().get(LANG_COOKIE)?.value === "de" ? "de" : "en";
   return (
-    <html lang={lang}>
+    <html lang={lang} className={`${grotesk.variable} ${mono.variable}`}>
       <head>
         {/* Scoped CSS from the artifact, injected once as a real style block. */}
         <style dangerouslySetInnerHTML={{ __html: CSS }} />

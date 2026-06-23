@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { ChevronLeft, Download, Loader2 } from "lucide-react";
-import { api } from "@/lib/api";
+import { Loader2 } from "lucide-react";
+import { DotGrid } from "@/components/DotGrid";
+import { BottomNav } from "@/components/BottomNav";
 import { useLang } from "@/components/LangProvider";
-import { addDays, dayLabel, keyOf, todayKey, weekdayOf } from "@/lib/date";
+import { api } from "@/lib/api";
+import { addDays, dateShort, todayKey, weekdayOf, weekdayShortUpper } from "@/lib/date";
 import { downloadExcel } from "@/lib/excel";
 import type { DayType, Entry, Settings } from "@/lib/types";
 
@@ -22,40 +23,31 @@ const DEFAULT_SETTINGS: Settings = {
   overrides: {},
 };
 
-type DaySummary = {
-  key: string;
-  total: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  type: DayType;
-  target: number | null;
-};
+const WINDOW_DAYS = 30; // recent days shown + exported
 
 export default function HistoryPage() {
   const { t, lang } = useLang();
   const today = todayKey();
+  const from = addDays(today, -(WINDOW_DAYS - 1));
+  const fmt = (n: number) => n.toLocaleString(lang === "de" ? "de-DE" : "en-US");
+
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [entries, setEntries] = useState<Entry[]>([]);
-  const [from, setFrom] = useState(addDays(today, -13));
-  const [to, setTo] = useState(today);
   const [loading, setLoading] = useState(true);
 
-  // settings once
   useEffect(() => {
     api.getSettings().then(setSettings).catch(() => {});
   }, []);
 
-  // entries whenever the range changes
   useEffect(() => {
-    if (from > to) return;
     setLoading(true);
     api
-      .getEntriesInRange(from, to)
+      .getEntriesInRange(from, today)
       .then(setEntries)
       .catch(() => setEntries([]))
       .finally(() => setLoading(false));
-  }, [from, to]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const resolveType = (key: string): DayType =>
     (settings.overrides[key] as DayType) ||
@@ -63,230 +55,124 @@ export default function HistoryPage() {
   const resolveTarget = (type: DayType) =>
     type === "rest" ? settings.restTarget ?? settings.target : settings.target;
 
-  const days: DaySummary[] = useMemo(() => {
-    const byDay = new Map<string, Entry[]>();
-    for (const e of entries) {
-      const list = byDay.get(e.date) ?? [];
-      list.push(e);
-      byDay.set(e.date, list);
+  // per-day totals keyed by date
+  const byDay = useMemo(() => {
+    const m = new Map<string, { total: number; type: DayType; target: number | null }>();
+    const sums = new Map<string, number>();
+    for (const e of entries) sums.set(e.date, (sums.get(e.date) ?? 0) + (e.kcal || 0));
+    for (const [key, total] of sums) {
+      const type = resolveType(key);
+      m.set(key, { total, type, target: resolveTarget(type) });
     }
-    return Array.from(byDay.keys())
-      .sort()
-      .reverse()
-      .map((key) => {
-        const list = byDay.get(key)!;
-        const type = resolveType(key);
-        return {
-          key,
-          total: list.reduce((a, e) => a + (e.kcal || 0), 0),
-          protein: list.reduce((a, e) => a + (e.protein || 0), 0),
-          carbs: list.reduce((a, e) => a + (e.carbs || 0), 0),
-          fat: list.reduce((a, e) => a + (e.fat || 0), 0),
-          type,
-          target: resolveTarget(type),
-        };
-      });
+    return m;
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [entries, settings]);
 
-  // averages across logged days in range
-  const loggedDays = days.length;
-  const avgKcal = loggedDays ? Math.round(days.reduce((a, d) => a + d.total, 0) / loggedDays) : 0;
-  const avgProtein = loggedDays ? Math.round(days.reduce((a, d) => a + d.protein, 0) / loggedDays) : 0;
+  // last 7 calendar days → average card + week strip
+  const last7 = useMemo(() => {
+    return Array.from({ length: 7 }, (_, i) => {
+      const key = addDays(today, -(6 - i));
+      const d = byDay.get(key);
+      const onTarget = d ? d.target == null || d.total <= d.target : false;
+      return { key, has: !!d, total: d?.total ?? 0, onTarget };
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [byDay]);
 
-  function setPreset(n: number | "month") {
-    if (n === "month") {
-      const d = new Date(`${today}T00:00:00`);
-      setFrom(keyOf(new Date(d.getFullYear(), d.getMonth(), 1)));
-      setTo(today);
-    } else {
-      setFrom(addDays(today, -(n - 1)));
-      setTo(today);
-    }
-  }
+  const logged7 = last7.filter((d) => d.has);
+  const avgKcal = logged7.length ? Math.round(logged7.reduce((a, d) => a + d.total, 0) / logged7.length) : 0;
+  const onTargetCount = last7.filter((d) => d.has && d.onTarget).length;
 
-  const activePreset = (() => {
-    if (to !== today) return null;
-    if (from === addDays(today, -6)) return 7;
-    if (from === addDays(today, -13)) return 14;
-    if (from === addDays(today, -29)) return 30;
-    const d = new Date(`${today}T00:00:00`);
-    if (from === keyOf(new Date(d.getFullYear(), d.getMonth(), 1))) return "month" as const;
-    return null;
-  })();
+  // recent days list (newest first)
+  const recent = useMemo(
+    () => Array.from(byDay.keys()).sort().reverse().map((key) => ({ key, ...byDay.get(key)! })),
+    [byDay],
+  );
 
   function onDownload() {
     if (!entries.length) return;
     downloadExcel(entries, resolveType, resolveTarget, today, {
-      log: t("xlLog"),
-      daily: t("xlDaily"),
-      date: t("xlDate"),
-      time: t("xlTime"),
-      item: t("xlItem"),
-      kcal: t("xlKcal"),
-      proteinG: t("xlProteinG"),
-      carbsG: t("xlCarbsG"),
-      fatG: t("xlFatG"),
-      dayType: t("xlDayType"),
-      totalKcal: t("xlTotalKcal"),
-      target: t("xlTarget"),
-      remaining: t("xlRemaining"),
-      protein: t("xlProtein"),
-      carbs: t("xlCarbs"),
-      fat: t("xlFat"),
-      training: t("dayTraining"),
-      rest: t("dayRest"),
+      log: t("xlLog"), daily: t("xlDaily"), date: t("xlDate"), time: t("xlTime"), item: t("xlItem"),
+      kcal: t("xlKcal"), proteinG: t("xlProteinG"), carbsG: t("xlCarbsG"), fatG: t("xlFatG"),
+      dayType: t("xlDayType"), totalKcal: t("xlTotalKcal"), target: t("xlTarget"), remaining: t("xlRemaining"),
+      protein: t("xlProtein"), carbs: t("xlCarbs"), fat: t("xlFat"), training: t("dayTraining"), rest: t("dayRest"),
     });
   }
 
   return (
-    <>
-      <header className="cal-head">
-        <Link className="cal-link" href="/">
-          <ChevronLeft size={16} /> {t("backToday")}
-        </Link>
-        <div className="cal-brand" style={{ fontSize: 14 }}>
-          <span className="cal-mark" />
-          <span>{t("historyTitle")}</span>
+    <div className="g-screen">
+      <div className="g-scroll">
+        {/* header */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 26px 0" }}>
+          <span className="g-fg" style={{ fontWeight: 700, fontSize: 26, color: "#1B1D17", letterSpacing: "-.02em" }}>{t("historyTitle")}</span>
+          <button className="g-link" onClick={onDownload} disabled={!entries.length} style={{ opacity: entries.length ? 1 : 0.5 }}>
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#55654C" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M12 3v12M7 10l5 5 5-5M5 21h14" /></svg>
+            {t("exportShort")}
+          </button>
         </div>
-      </header>
 
-      {/* range selector */}
-      <section className="cal-card">
-        <div className="cal-eyebrow" style={{ marginBottom: 10 }}>
-          {t("dateRange")}
-        </div>
-        <div className="cal-range">
-          <div className="cal-rfield">
-            <label>{t("from")}</label>
-            <input
-              className="cal-date"
-              type="date"
-              value={from}
-              max={to}
-              onChange={(e) => setFrom(e.target.value)}
-            />
-          </div>
-          <div className="cal-rfield">
-            <label>{t("to")}</label>
-            <input
-              className="cal-date"
-              type="date"
-              value={to}
-              min={from}
-              max={today}
-              onChange={(e) => setTo(e.target.value)}
-            />
-          </div>
-        </div>
-        <div className="cal-presets">
-          {([7, 14, 30, "month"] as const).map((p) => (
-            <button
-              key={String(p)}
-              className={`cal-preset ${activePreset === p ? "on" : ""}`}
-              onClick={() => setPreset(p)}
-            >
-              {p === "month"
-                ? t("thisMonth")
-                : p === 7
-                  ? t("days7")
-                  : p === 14
-                    ? t("days14")
-                    : t("days30")}
-            </button>
-          ))}
-        </div>
-      </section>
-
-      {/* averages */}
-      <section className="cal-card">
-        <div className="cal-eyebrow" style={{ marginBottom: 10 }}>
-          {t("avgPerDay")}
-        </div>
-        <div className="cal-avg">
-          <div className="cal-avg-cell">
-            <div className="cal-avg-v">
-              {avgKcal}
-              <span className="cal-avg-u">kcal</span>
+        {/* 7-day average card */}
+        <div style={{ margin: "18px 26px 0", background: "#55654C", borderRadius: 20, padding: 20, color: "#fff" }}>
+          <div style={{ fontSize: 11, letterSpacing: ".12em", textTransform: "uppercase", color: "rgba(255,255,255,.7)", fontWeight: 600 }}>{t("sevenDayAvg")}</div>
+          <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", marginTop: 8 }}>
+            <div style={{ display: "flex", alignItems: "flex-end", gap: 8 }}>
+              <span className="g-fg" style={{ fontWeight: 700, fontSize: 38, lineHeight: 0.9 }}>{fmt(avgKcal)}</span>
+              <span style={{ fontSize: 13, color: "rgba(255,255,255,.75)", marginBottom: 5 }}>{t("kcalSlashDay")}</span>
             </div>
-            <div className="cal-avg-l">{t("kcalPerDay")}</div>
-          </div>
-          <div className="cal-avg-cell">
-            <div className="cal-avg-v">
-              {avgProtein}
-              <span className="cal-avg-u">g</span>
+            <div style={{ textAlign: "right" }}>
+              <div className="g-fg" style={{ fontWeight: 700, fontSize: 20 }}>{onTargetCount}/7</div>
+              <div style={{ fontSize: 11, color: "rgba(255,255,255,.7)" }}>{t("onTarget")}</div>
             </div>
-            <div className="cal-avg-l">{t("proteinPerDay")}</div>
           </div>
-          <div className="cal-avg-cell">
-            <div className="cal-avg-v">{loggedDays}</div>
-            <div className="cal-avg-l">{t("daysLogged")}</div>
+          <div style={{ display: "flex", gap: 5, marginTop: 16 }}>
+            {last7.map((d) => (
+              <div
+                key={d.key}
+                style={{ flex: 1, height: 6, borderRadius: 3, background: !d.has ? "rgba(255,255,255,.4)" : d.onTarget ? "rgba(255,255,255,.85)" : "#C2974A" }}
+              />
+            ))}
           </div>
         </div>
-      </section>
 
-      {/* per-day list */}
-      <section className="cal-card">
-        <div className="cal-eyebrow" style={{ marginBottom: 8 }}>
-          {t("daysHeading")}
-        </div>
-        {loading ? (
-          <div style={{ display: "flex", justifyContent: "center", padding: 20, color: "var(--muted)" }}>
-            <Loader2 size={18} className="cal-spin" />
-          </div>
-        ) : days.length === 0 ? (
-          <div className="cal-empty">{t("noMealsRange")}</div>
-        ) : (
-          <ul className="cal-hlist">
-            {days.map((d) => {
-              const tg = d.target;
-              const ratio = tg ? Math.min(1, d.total / tg) : 0;
-              const over = !!tg && d.total > tg;
-              const remaining = tg != null ? tg - d.total : null;
+        {/* recent days */}
+        <div className="g-overline" style={{ margin: "22px 26px 6px" }}>{t("recentDays")}</div>
+        <div style={{ margin: "0 26px" }}>
+          {loading ? (
+            <div style={{ display: "flex", justifyContent: "center", padding: 24, color: "var(--muted)" }}><Loader2 size={18} className="g-spin" /></div>
+          ) : recent.length === 0 ? (
+            <div style={{ fontSize: 14, color: "#9A9C8F", padding: "16px 0" }}>{t("noMealsRange")}</div>
+          ) : (
+            recent.map((d) => {
+              const delta = d.target != null ? d.total - d.target : null;
+              const isOver = delta != null && delta > 0;
               return (
-                <li key={d.key} className="cal-hrow">
-                  <div className="cal-hrow-top">
-                    <span className="cal-hdate">
-                      {dayLabel(d.key, lang)}{" "}
-                      <span className="cal-hbadge">· {d.type === "training" ? t("dayTraining") : t("dayRest")}</span>
-                    </span>
-                    <span className="cal-hk">
-                      {d.total}
-                      {tg ? ` / ${tg}` : ""}
-                    </span>
+                <div key={d.key} style={{ display: "flex", alignItems: "center", gap: 14, padding: "13px 0", borderBottom: "1px solid #E4E1D3" }}>
+                  <div style={{ width: 42, flex: "none" }}>
+                    <div style={{ fontSize: 10, letterSpacing: ".06em", color: "#9A9C8F", fontWeight: 600 }}>{weekdayShortUpper(d.key, lang)}</div>
+                    <div className="g-fg" style={{ fontWeight: 600, fontSize: 14, color: "#1B1D17" }}>{dateShort(d.key, lang)}</div>
                   </div>
-                  <div className="cal-hbar">
-                    <span
-                      style={{
-                        width: `${ratio * 100}%`,
-                        background: over ? "var(--over)" : "var(--accent)",
-                      }}
-                    />
-                  </div>
-                  <div className="cal-hmeta">
-                    P {d.protein} · C {d.carbs} · F {d.fat}
-                    {remaining != null && (
-                      <>
-                        {" · "}
-                        {remaining >= 0
-                          ? t("nLeft", { n: remaining })
-                          : t("nOver", { n: Math.abs(remaining) })}
-                      </>
+                  <DotGrid consumed={d.total} target={d.target ?? 0} mini />
+                  <div style={{ flex: 1, textAlign: "right" }}>
+                    <div className="g-fm" style={{ fontSize: 14, color: "#1B1D17" }}>{fmt(d.total)}</div>
+                    {delta != null && (
+                      <div
+                        className="g-fm"
+                        style={{ display: "inline-block", fontSize: 11, fontWeight: 700, color: isOver ? "#BC6440" : "#41503A", background: isOver ? "#F3E2D9" : "#E7EADF", borderRadius: 6, padding: "1px 7px", marginTop: 3 }}
+                      >
+                        {isOver ? "+" : "−"}{Math.abs(delta)}
+                      </div>
                     )}
                   </div>
-                </li>
+                </div>
               );
-            })}
-          </ul>
-        )}
-      </section>
-
-      <div className="cal-foot">
-        <button className="cal-btn cal-btn-pri" onClick={onDownload} disabled={!entries.length}>
-          <Download size={15} /> {t("downloadExcel")}
-        </button>
-        <span className="cal-foot-note">{t("excelNote")}</span>
+            })
+          )}
+        </div>
       </div>
-    </>
+
+      <div className="g-footer">
+        <BottomNav active="history" labels={{ today: t("backToday"), history: t("historyTitle"), settings: t("settingsTitle"), add: t("addMeal") }} />
+      </div>
+    </div>
   );
 }
