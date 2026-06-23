@@ -32,6 +32,7 @@ html,body{margin:0; padding:0; background:#EDEFE9;}
 .cal-mark{width:13px; height:13px; border-radius:3px; background:var(--accent); display:inline-block;}
 .cal-icon{width:34px; height:34px; display:grid; place-items:center; border:1px solid var(--line); background:var(--surface); color:var(--ink-soft); border-radius:9px;}
 .cal-icon:hover{border-color:var(--line-strong);}
+.cal-lang{width:auto; padding:0 8px; gap:4px; grid-auto-flow:column; font-family:var(--fm); font-size:11px; font-weight:600; letter-spacing:0.02em;}
 
 .cal-card{background:var(--surface); border:1px solid var(--line); border-radius:16px; padding:18px; margin-bottom:12px;}
 .cal-eyebrow{font-size:10.5px; text-transform:uppercase; letter-spacing:0.1em; color:var(--muted); font-weight:600;}

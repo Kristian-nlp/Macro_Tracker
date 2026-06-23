@@ -3,8 +3,10 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2 } from "lucide-react";
+import { useLang } from "@/components/LangProvider";
 
 export default function LoginPage() {
+  const { t } = useLang();
   const router = useRouter();
   const [username, setUsername] = useState("");
   const [pin, setPin] = useState("");
@@ -15,11 +17,11 @@ export default function LoginPage() {
     e.preventDefault();
     if (busy) return;
     if (!username.trim()) {
-      setErr("Enter a username.");
+      setErr(t("errEnterUser"));
       return;
     }
     if (!/^\d{4}$/.test(pin)) {
-      setErr("PIN must be 4 digits.");
+      setErr(t("errPin4"));
       return;
     }
     setBusy(true);
@@ -34,12 +36,18 @@ export default function LoginPage() {
         router.replace("/");
         router.refresh();
       } else {
-        const data = await res.json().catch(() => ({}));
-        setErr(data.error || "Could not sign in.");
+        // Translate by status so the message matches the chosen language.
+        const msg =
+          res.status === 401
+            ? t("errWrongPin")
+            : res.status === 429
+              ? t("errTooMany")
+              : t("errLoginGeneric");
+        setErr(msg);
         setBusy(false);
       }
     } catch {
-      setErr("Something went wrong. Try again.");
+      setErr(t("errSomething"));
       setBusy(false);
     }
   }
@@ -48,14 +56,14 @@ export default function LoginPage() {
     <div className="cal-login">
       <div className="cal-brand" style={{ fontSize: 17 }}>
         <span className="cal-mark" />
-        <span>Daily intake</span>
+        <span>{t("brand")}</span>
       </div>
       <form className="cal-card" onSubmit={submit}>
-        <h1>Sign in</h1>
-        <p>Enter your username and 4-digit PIN. A new username will be created.</p>
+        <h1>{t("signIn")}</h1>
+        <p>{t("loginHint")}</p>
         <input
           className="cal-input"
-          placeholder="Username"
+          placeholder={t("username")}
           value={username}
           onChange={(e) => setUsername(e.target.value)}
           autoComplete="username"
@@ -64,7 +72,7 @@ export default function LoginPage() {
         />
         <input
           className="cal-input"
-          placeholder="4-digit PIN"
+          placeholder={t("pin")}
           value={pin}
           inputMode="numeric"
           maxLength={4}
@@ -76,10 +84,10 @@ export default function LoginPage() {
           <button className="cal-btn cal-btn-pri" type="submit" disabled={busy} style={{ flex: 1 }}>
             {busy ? (
               <>
-                <Loader2 size={16} className="cal-spin" /> Signing in
+                <Loader2 size={16} className="cal-spin" /> {t("signingIn")}
               </>
             ) : (
-              "Continue"
+              t("continue")
             )}
           </button>
         </div>

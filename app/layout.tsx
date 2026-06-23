@@ -1,6 +1,9 @@
 import type { Metadata, Viewport } from "next";
+import { cookies } from "next/headers";
 import { CSS, wrap } from "@/lib/css";
 import { RegisterSW } from "@/components/RegisterSW";
+import { LangProvider } from "@/components/LangProvider";
+import { LANG_COOKIE, type Lang } from "@/lib/i18n";
 
 export const metadata: Metadata = {
   title: "Daily intake",
@@ -31,8 +34,9 @@ export const viewport: Viewport = {
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
+  const lang: Lang = cookies().get(LANG_COOKIE)?.value === "de" ? "de" : "en";
   return (
-    <html lang="en">
+    <html lang={lang}>
       <head>
         {/* Scoped CSS from the artifact, injected once as a real style block. */}
         <style dangerouslySetInnerHTML={{ __html: CSS }} />
@@ -41,9 +45,11 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <meta name="apple-mobile-web-app-capable" content="yes" />
       </head>
       <body>
-        <div className="cal-app" style={wrap}>
-          {children}
-        </div>
+        <LangProvider initial={lang}>
+          <div className="cal-app" style={wrap}>
+            {children}
+          </div>
+        </LangProvider>
         <RegisterSW />
       </body>
     </html>

@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
+import { useLang } from "@/components/LangProvider";
 
 type Props = { onDetected: (code: string) => void; onClose: () => void };
 
@@ -9,6 +10,7 @@ type Props = { onDetected: (code: string) => void; onClose: () => void };
 // the main bundle. Prefers the rear camera and restricts to common product
 // formats (EAN/UPC) for speed and accuracy.
 export default function BarcodeScanner({ onDetected, onClose }: Props) {
+  const { t } = useLang();
   const videoRef = useRef<HTMLVideoElement>(null);
   const onDetectedRef = useRef(onDetected);
   onDetectedRef.current = onDetected;
@@ -52,7 +54,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
         stop = () => controls.stop();
         if (done) controls.stop(); // detected before assignment
       } catch {
-        setErr("Couldn't start the camera. Allow camera access, or add the numbers manually.");
+        setErr(t("scanError"));
       }
     })();
 
@@ -64,14 +66,15 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
         /* ignore */
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
     <div className="cal-scan-bg" onClick={onClose}>
       <div className="cal-scan" onClick={(e) => e.stopPropagation()}>
         <div className="cal-scan-head">
-          <span>Scan a barcode</span>
-          <button className="cal-icon" onClick={onClose} aria-label="Close">
+          <span>{t("scanTitle")}</span>
+          <button className="cal-icon" onClick={onClose} aria-label="×">
             <X size={18} />
           </button>
         </div>
@@ -84,7 +87,7 @@ export default function BarcodeScanner({ onDetected, onClose }: Props) {
             {err}
           </div>
         ) : (
-          <div className="cal-scan-hint">Point the camera at the product barcode.</div>
+          <div className="cal-scan-hint">{t("scanHint")}</div>
         )}
       </div>
     </div>

@@ -1,0 +1,271 @@
+// Tiny i18n layer (no dependency). English + German strings, plus localized day
+// and month names. `useLang()` (see components/LangProvider) exposes `t`.
+
+export type Lang = "en" | "de";
+export const LANGS: Lang[] = ["en", "de"];
+export const LANG_COOKIE = "mt_lang";
+
+export const DAYS_SHORT: Record<Lang, string[]> = {
+  en: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+  de: ["So", "Mo", "Di", "Mi", "Do", "Fr", "Sa"],
+};
+
+export const MONTHS: Record<Lang, string[]> = {
+  en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"],
+  de: ["Jan", "Feb", "März", "Apr", "Mai", "Jun", "Jul", "Aug", "Sep", "Okt", "Nov", "Dez"],
+};
+
+export const T = {
+  en: {
+    brand: "Daily intake",
+    aHistory: "History",
+    aSettings: "Settings",
+    aAccount: "Account",
+    aLanguage: "Switch language",
+
+    rest: "Rest",
+    training: "Training",
+    dayTraining: "training",
+    dayRest: "rest",
+
+    kcalLeft: "kcal left",
+    kcalOver: "kcal over target",
+    ofEaten: "of {target} eaten",
+    kcalEatenHint: "kcal eaten · set a target in settings",
+    protein: "Protein",
+    carbs: "Carbs",
+    fat: "Fat",
+
+    addMeal: "Add a meal",
+    descPlaceholder: "What did you eat? e.g. 150g grilled chicken, cup of rice, handful of edamame",
+    addPhoto: "Add photo",
+    changePhoto: "Change photo",
+    estimate: "Estimate macros",
+    estimating: "Estimating",
+    barcode: "Barcode",
+    namePlaceholder: "Name (optional)",
+    fKcal: "kcal",
+    fProtein: "Protein",
+    fCarbs: "Carbs",
+    fFat: "Fat",
+    addToToday: "Add to today",
+    saveFav: "Save as favourite",
+    saveFavTitle: "Save for one-tap logging",
+
+    errImage: "That image would not load. Try another, or add the numbers manually.",
+    errEstimate: "Could not estimate that one. Add the numbers below and it will still log.",
+    errSave: "Could not save that entry. Check your connection and try again.",
+    errFav: "Could not save the favourite. Try again.",
+    errBarcodeNotFound: "That barcode wasn't found in the food database. Add the numbers manually.",
+    errBarcodeLookup: "Could not look up that barcode. Add the numbers manually.",
+
+    todayItemOne: "Today · {n} item",
+    todayItemMany: "Today · {n} items",
+    nothingLogged: "Nothing logged yet. Add your first meal above.",
+
+    historyExport: "History & export",
+    footNote: "Saved automatically · estimates are approximate, edit before logging",
+
+    settingsTitle: "Settings",
+    trainingTargets: "Training day targets",
+    restTargets: "Rest day targets",
+    calories: "Calories (kcal)",
+    proteinG: "Protein (g)",
+    carbsG: "Carbs (g)",
+    fatG: "Fat (g)",
+    trainingDays: "Training days",
+    favourites: "Favourites",
+    sameAsTraining: "same as training",
+    optional: "optional",
+
+    accountTitle: "Account",
+    signedInAs: "Signed in as",
+    switchUser: "Switch user",
+
+    scanTitle: "Scan a barcode",
+    scanHint: "Point the camera at the product barcode.",
+    scanError: "Couldn't start the camera. Allow camera access, or add the numbers manually.",
+
+    signIn: "Sign in",
+    loginHint: "Enter your username and 4-digit PIN. A new username will be created.",
+    username: "Username",
+    pin: "4-digit PIN",
+    continue: "Continue",
+    signingIn: "Signing in",
+    errEnterUser: "Enter a username.",
+    errPin4: "PIN must be 4 digits.",
+    errWrongPin: "Wrong PIN for that username.",
+    errTooMany: "Too many attempts. Wait a minute and try again.",
+    errLoginGeneric: "Could not sign in.",
+    errSomething: "Something went wrong. Try again.",
+
+    backToday: "Today",
+    historyTitle: "History",
+    dateRange: "Date range",
+    from: "From",
+    to: "To",
+    days7: "7 days",
+    days14: "14 days",
+    days30: "30 days",
+    thisMonth: "This month",
+    avgPerDay: "Average per logged day",
+    kcalPerDay: "kcal / day",
+    proteinPerDay: "protein / day",
+    daysLogged: "days logged",
+    daysHeading: "Days",
+    noMealsRange: "No meals logged in this range.",
+    nLeft: "{n} left",
+    nOver: "{n} over",
+    downloadExcel: "Download Excel",
+    excelNote: "Two sheets: every meal, plus a daily summary.",
+
+    xlLog: "Log",
+    xlDaily: "Daily summary",
+    xlDate: "Date",
+    xlTime: "Time",
+    xlItem: "Item",
+    xlKcal: "kcal",
+    xlProteinG: "Protein (g)",
+    xlCarbsG: "Carbs (g)",
+    xlFatG: "Fat (g)",
+    xlDayType: "Day type",
+    xlTotalKcal: "Total kcal",
+    xlTarget: "Target",
+    xlRemaining: "Remaining",
+    xlProtein: "Protein",
+    xlCarbs: "Carbs",
+    xlFat: "Fat",
+  },
+
+  de: {
+    brand: "Tägliche Aufnahme",
+    aHistory: "Verlauf",
+    aSettings: "Einstellungen",
+    aAccount: "Konto",
+    aLanguage: "Sprache wechseln",
+
+    rest: "Ruhe",
+    training: "Training",
+    dayTraining: "Training",
+    dayRest: "Ruhe",
+
+    kcalLeft: "kcal übrig",
+    kcalOver: "kcal über Ziel",
+    ofEaten: "von {target} gegessen",
+    kcalEatenHint: "kcal gegessen · Ziel in den Einstellungen setzen",
+    protein: "Protein",
+    carbs: "Kohlenhydrate",
+    fat: "Fett",
+
+    addMeal: "Mahlzeit hinzufügen",
+    descPlaceholder: "Was hast du gegessen? z. B. 150 g Hähnchen, eine Tasse Reis, eine Handvoll Edamame",
+    addPhoto: "Foto hinzufügen",
+    changePhoto: "Foto ändern",
+    estimate: "Makros schätzen",
+    estimating: "Schätze",
+    barcode: "Barcode",
+    namePlaceholder: "Name (optional)",
+    fKcal: "kcal",
+    fProtein: "Protein",
+    fCarbs: "Kohlenh.",
+    fFat: "Fett",
+    addToToday: "Zu heute hinzufügen",
+    saveFav: "Als Favorit speichern",
+    saveFavTitle: "Für Ein-Tipp-Eintrag speichern",
+
+    errImage: "Dieses Bild ließ sich nicht laden. Versuche ein anderes oder gib die Zahlen manuell ein.",
+    errEstimate: "Konnte das nicht schätzen. Gib die Zahlen unten ein, dann wird es trotzdem gespeichert.",
+    errSave: "Konnte den Eintrag nicht speichern. Prüfe deine Verbindung und versuche es erneut.",
+    errFav: "Konnte den Favoriten nicht speichern. Versuche es erneut.",
+    errBarcodeNotFound:
+      "Dieser Barcode wurde in der Lebensmitteldatenbank nicht gefunden. Gib die Zahlen manuell ein.",
+    errBarcodeLookup: "Konnte den Barcode nicht nachschlagen. Gib die Zahlen manuell ein.",
+
+    todayItemOne: "Heute · {n} Eintrag",
+    todayItemMany: "Heute · {n} Einträge",
+    nothingLogged: "Noch nichts eingetragen. Füge oben deine erste Mahlzeit hinzu.",
+
+    historyExport: "Verlauf & Export",
+    footNote: "Automatisch gespeichert · Schätzungen sind ungefähr, vor dem Eintragen anpassen",
+
+    settingsTitle: "Einstellungen",
+    trainingTargets: "Ziele für Trainingstage",
+    restTargets: "Ziele für Ruhetage",
+    calories: "Kalorien (kcal)",
+    proteinG: "Protein (g)",
+    carbsG: "Kohlenhydrate (g)",
+    fatG: "Fett (g)",
+    trainingDays: "Trainingstage",
+    favourites: "Favoriten",
+    sameAsTraining: "wie Trainingstag",
+    optional: "optional",
+
+    accountTitle: "Konto",
+    signedInAs: "Angemeldet als",
+    switchUser: "Benutzer wechseln",
+
+    scanTitle: "Barcode scannen",
+    scanHint: "Richte die Kamera auf den Produkt-Barcode.",
+    scanError: "Kamera konnte nicht gestartet werden. Erlaube den Kamerazugriff oder gib die Zahlen manuell ein.",
+
+    signIn: "Anmelden",
+    loginHint: "Gib deinen Benutzernamen und 4-stelligen PIN ein. Ein neuer Benutzername wird angelegt.",
+    username: "Benutzername",
+    pin: "4-stelliger PIN",
+    continue: "Weiter",
+    signingIn: "Anmeldung läuft",
+    errEnterUser: "Gib einen Benutzernamen ein.",
+    errPin4: "PIN muss 4 Ziffern haben.",
+    errWrongPin: "Falscher PIN für diesen Benutzernamen.",
+    errTooMany: "Zu viele Versuche. Warte eine Minute und versuche es erneut.",
+    errLoginGeneric: "Anmeldung fehlgeschlagen.",
+    errSomething: "Etwas ist schiefgelaufen. Versuche es erneut.",
+
+    backToday: "Heute",
+    historyTitle: "Verlauf",
+    dateRange: "Zeitraum",
+    from: "Von",
+    to: "Bis",
+    days7: "7 Tage",
+    days14: "14 Tage",
+    days30: "30 Tage",
+    thisMonth: "Dieser Monat",
+    avgPerDay: "Durchschnitt pro erfasstem Tag",
+    kcalPerDay: "kcal / Tag",
+    proteinPerDay: "Protein / Tag",
+    daysLogged: "Tage erfasst",
+    daysHeading: "Tage",
+    noMealsRange: "In diesem Zeitraum nichts erfasst.",
+    nLeft: "{n} übrig",
+    nOver: "{n} über",
+    downloadExcel: "Excel herunterladen",
+    excelNote: "Zwei Tabellen: jede Mahlzeit plus eine Tagesübersicht.",
+
+    xlLog: "Protokoll",
+    xlDaily: "Tagesübersicht",
+    xlDate: "Datum",
+    xlTime: "Zeit",
+    xlItem: "Eintrag",
+    xlKcal: "kcal",
+    xlProteinG: "Protein (g)",
+    xlCarbsG: "Kohlenhydrate (g)",
+    xlFatG: "Fett (g)",
+    xlDayType: "Tagestyp",
+    xlTotalKcal: "Gesamt kcal",
+    xlTarget: "Ziel",
+    xlRemaining: "Übrig",
+    xlProtein: "Protein",
+    xlCarbs: "Kohlenhydrate",
+    xlFat: "Fett",
+  },
+} satisfies Record<Lang, Record<string, string>>;
+
+export type TKey = keyof (typeof T)["en"];
+
+export function translate(lang: Lang, key: TKey, params?: Record<string, string | number>): string {
+  let s: string = T[lang][key] ?? T.en[key] ?? String(key);
+  if (params) {
+    for (const [k, v] of Object.entries(params)) s = s.replace(`{${k}}`, String(v));
+  }
+  return s;
+}

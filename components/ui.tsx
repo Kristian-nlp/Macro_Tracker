@@ -61,7 +61,7 @@ export function Modal({
       <div className="cal-modal" onClick={(e) => e.stopPropagation()}>
         <div className="cal-modal-head">
           <span>{title}</span>
-          <button className="cal-icon" onClick={onClose} aria-label="Close">
+          <button className="cal-icon" onClick={onClose} aria-label="×">
             <X size={18} />
           </button>
         </div>

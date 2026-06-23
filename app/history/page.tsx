@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, Download, Loader2 } from "lucide-react";
 import { api } from "@/lib/api";
+import { useLang } from "@/components/LangProvider";
 import { addDays, dayLabel, keyOf, todayKey, weekdayOf } from "@/lib/date";
 import { downloadExcel } from "@/lib/excel";
 import type { DayType, Entry, Settings } from "@/lib/types";
@@ -32,6 +33,7 @@ type DaySummary = {
 };
 
 export default function HistoryPage() {
+  const { t, lang } = useLang();
   const today = todayKey();
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [entries, setEntries] = useState<Entry[]>([]);
@@ -115,29 +117,48 @@ export default function HistoryPage() {
 
   function onDownload() {
     if (!entries.length) return;
-    downloadExcel(entries, resolveType, resolveTarget, today);
+    downloadExcel(entries, resolveType, resolveTarget, today, {
+      log: t("xlLog"),
+      daily: t("xlDaily"),
+      date: t("xlDate"),
+      time: t("xlTime"),
+      item: t("xlItem"),
+      kcal: t("xlKcal"),
+      proteinG: t("xlProteinG"),
+      carbsG: t("xlCarbsG"),
+      fatG: t("xlFatG"),
+      dayType: t("xlDayType"),
+      totalKcal: t("xlTotalKcal"),
+      target: t("xlTarget"),
+      remaining: t("xlRemaining"),
+      protein: t("xlProtein"),
+      carbs: t("xlCarbs"),
+      fat: t("xlFat"),
+      training: t("dayTraining"),
+      rest: t("dayRest"),
+    });
   }
 
   return (
     <>
       <header className="cal-head">
         <Link className="cal-link" href="/">
-          <ChevronLeft size={16} /> Today
+          <ChevronLeft size={16} /> {t("backToday")}
         </Link>
         <div className="cal-brand" style={{ fontSize: 14 }}>
           <span className="cal-mark" />
-          <span>History</span>
+          <span>{t("historyTitle")}</span>
         </div>
       </header>
 
       {/* range selector */}
       <section className="cal-card">
         <div className="cal-eyebrow" style={{ marginBottom: 10 }}>
-          Date range
+          {t("dateRange")}
         </div>
         <div className="cal-range">
           <div className="cal-rfield">
-            <label>From</label>
+            <label>{t("from")}</label>
             <input
               className="cal-date"
               type="date"
@@ -147,7 +168,7 @@ export default function HistoryPage() {
             />
           </div>
           <div className="cal-rfield">
-            <label>To</label>
+            <label>{t("to")}</label>
             <input
               className="cal-date"
               type="date"
@@ -165,7 +186,13 @@ export default function HistoryPage() {
               className={`cal-preset ${activePreset === p ? "on" : ""}`}
               onClick={() => setPreset(p)}
             >
-              {p === "month" ? "This month" : `${p} days`}
+              {p === "month"
+                ? t("thisMonth")
+                : p === 7
+                  ? t("days7")
+                  : p === 14
+                    ? t("days14")
+                    : t("days30")}
             </button>
           ))}
         </div>
@@ -174,7 +201,7 @@ export default function HistoryPage() {
       {/* averages */}
       <section className="cal-card">
         <div className="cal-eyebrow" style={{ marginBottom: 10 }}>
-          Average per logged day
+          {t("avgPerDay")}
         </div>
         <div className="cal-avg">
           <div className="cal-avg-cell">
@@ -182,18 +209,18 @@ export default function HistoryPage() {
               {avgKcal}
               <span className="cal-avg-u">kcal</span>
             </div>
-            <div className="cal-avg-l">kcal / day</div>
+            <div className="cal-avg-l">{t("kcalPerDay")}</div>
           </div>
           <div className="cal-avg-cell">
             <div className="cal-avg-v">
               {avgProtein}
               <span className="cal-avg-u">g</span>
             </div>
-            <div className="cal-avg-l">protein / day</div>
+            <div className="cal-avg-l">{t("proteinPerDay")}</div>
           </div>
           <div className="cal-avg-cell">
             <div className="cal-avg-v">{loggedDays}</div>
-            <div className="cal-avg-l">days logged</div>
+            <div className="cal-avg-l">{t("daysLogged")}</div>
           </div>
         </div>
       </section>
@@ -201,14 +228,14 @@ export default function HistoryPage() {
       {/* per-day list */}
       <section className="cal-card">
         <div className="cal-eyebrow" style={{ marginBottom: 8 }}>
-          Days
+          {t("daysHeading")}
         </div>
         {loading ? (
           <div style={{ display: "flex", justifyContent: "center", padding: 20, color: "var(--muted)" }}>
             <Loader2 size={18} className="cal-spin" />
           </div>
         ) : days.length === 0 ? (
-          <div className="cal-empty">No meals logged in this range.</div>
+          <div className="cal-empty">{t("noMealsRange")}</div>
         ) : (
           <ul className="cal-hlist">
             {days.map((d) => {
@@ -220,7 +247,8 @@ export default function HistoryPage() {
                 <li key={d.key} className="cal-hrow">
                   <div className="cal-hrow-top">
                     <span className="cal-hdate">
-                      {dayLabel(d.key)} <span className="cal-hbadge">· {d.type}</span>
+                      {dayLabel(d.key, lang)}{" "}
+                      <span className="cal-hbadge">· {d.type === "training" ? t("dayTraining") : t("dayRest")}</span>
                     </span>
                     <span className="cal-hk">
                       {d.total}
@@ -240,7 +268,9 @@ export default function HistoryPage() {
                     {remaining != null && (
                       <>
                         {" · "}
-                        {remaining >= 0 ? `${remaining} left` : `${Math.abs(remaining)} over`}
+                        {remaining >= 0
+                          ? t("nLeft", { n: remaining })
+                          : t("nOver", { n: Math.abs(remaining) })}
                       </>
                     )}
                   </div>
@@ -253,9 +283,9 @@ export default function HistoryPage() {
 
       <div className="cal-foot">
         <button className="cal-btn cal-btn-pri" onClick={onDownload} disabled={!entries.length}>
-          <Download size={15} /> Download Excel
+          <Download size={15} /> {t("downloadExcel")}
         </button>
-        <span className="cal-foot-note">Two sheets: every meal, plus a daily summary.</span>
+        <span className="cal-foot-note">{t("excelNote")}</span>
       </div>
     </>
   );

@@ -22,6 +22,9 @@ the artifact, as required:
 - **Open Food Facts** (free, no key) for barcode product lookups; **ZXing**
   (`@zxing/browser`) for in-browser camera scanning
 - **lucide-react** icons; scoped CSS from the artifact (no Tailwind)
+- **English + German** UI via a tiny built-in i18n layer (`lib/i18n.ts`); a
+  language toggle in the header switches and persists the choice in a cookie
+  (read server-side so there's no flash), and the Excel export is localized too
 
 ## Hard constraints honoured
 

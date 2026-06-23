@@ -8,6 +8,7 @@ import {
   Camera,
   Check,
   History,
+  Languages,
   Loader2,
   Plus,
   Settings as SettingsIcon,
@@ -18,9 +19,11 @@ import {
 } from "lucide-react";
 import { Vessel } from "@/components/Vessel";
 import { Field, Macro, Modal } from "@/components/ui";
+import { useLang } from "@/components/LangProvider";
 import { api } from "@/lib/api";
 import { downscale, type Downscaled } from "@/lib/image";
-import { DAYS_SHORT, dayLabel, nowTime, todayKey, weekdayOf } from "@/lib/date";
+import { dayLabel, nowTime, todayKey, weekdayOf } from "@/lib/date";
+import { DAYS_SHORT } from "@/lib/i18n";
 import type { DayType, Entry, Settings, Template } from "@/lib/types";
 
 // Camera scanner is browser-only and pulls in ZXing, so load it lazily.
@@ -63,6 +66,7 @@ type Draft = {
 const EMPTY_DRAFT: Draft = { label: "", kcal: "", protein: "", carbs: "", fat: "", note: "" };
 
 export default function TodayPage() {
+  const { t, lang, setLang } = useLang();
   const [loaded, setLoaded] = useState(false);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [todays, setTodays] = useState<Entry[]>([]);
@@ -150,7 +154,7 @@ export default function TodayPage() {
       setTodays((prev) => prev.map((e) => (e.id === optimistic.id ? saved : e)));
     } catch {
       setTodays((prev) => prev.filter((e) => e.id !== optimistic.id));
-      setEstErr("Could not save that entry. Check your connection and try again.");
+      setEstErr(t("errSave"));
     }
   }
 
@@ -172,7 +176,7 @@ export default function TodayPage() {
       const out = await downscale(file);
       setImg(out);
     } catch {
-      setEstErr("That image would not load. Try another, or add the numbers manually.");
+      setEstErr(t("errImage"));
     }
     e.target.value = "";
   }
@@ -193,7 +197,7 @@ export default function TodayPage() {
         note: r.note,
       });
     } catch {
-      setEstErr("Could not estimate that one. Add the numbers below and it will still log.");
+      setEstErr(t("errEstimate"));
     } finally {
       setEstimating(false);
     }
@@ -209,7 +213,7 @@ export default function TodayPage() {
       protein: String(Math.round(per100g.protein * f)),
       carbs: String(Math.round(per100g.carbs * f)),
       fat: String(Math.round(per100g.fat * f)),
-      note: `${grams || 0} g of ${name}`,
+      note: `${grams || 0} g · ${name}`,
     });
   }
 
@@ -220,7 +224,7 @@ export default function TodayPage() {
       const r = await fetch(`/api/product/${encodeURIComponent(code)}`, { cache: "no-store" });
       const data = await r.json();
       if (!data?.found) {
-        setEstErr("That barcode wasn't found in the food database. Add the numbers manually.");
+        setEstErr(t("errBarcodeNotFound"));
         return;
       }
       const grams: number = data.servingGrams ?? 100;
@@ -228,7 +232,7 @@ export default function TodayPage() {
       setAmount(String(grams));
       applyAmount(data.name, data.per100g, grams);
     } catch {
-      setEstErr("Could not look up that barcode. Add the numbers manually.");
+      setEstErr(t("errBarcodeLookup"));
     }
   }
 
@@ -267,7 +271,7 @@ export default function TodayPage() {
       const saved = await api.addTemplate(payload);
       setTemplates((prev) => [...prev, saved]);
     } catch {
-      setEstErr("Could not save the favourite. Try again.");
+      setEstErr(t("errFav"));
     }
   }
 
@@ -316,7 +320,7 @@ export default function TodayPage() {
     persistSettings({ ...settings, [field]: v });
   }
 
-  const targetRow = (label: string, field: NumField, placeholder = "optional") => (
+  const targetRow = (label: string, field: NumField, placeholder = t("optional")) => (
     <div className="cal-srow" key={field}>
       <label>{label}</label>
       <input
@@ -351,16 +355,25 @@ export default function TodayPage() {
       <header className="cal-head">
         <div className="cal-brand">
           <span className="cal-mark" />
-          <span>Daily intake</span>
+          <span>{t("brand")}</span>
         </div>
         <div style={{ display: "flex", gap: 6 }}>
-          <Link className="cal-icon" href="/history" aria-label="History">
+          <button
+            className="cal-icon cal-lang"
+            onClick={() => setLang(lang === "en" ? "de" : "en")}
+            aria-label={t("aLanguage")}
+            title={t("aLanguage")}
+          >
+            <Languages size={15} />
+            <span>{lang.toUpperCase()}</span>
+          </button>
+          <Link className="cal-icon" href="/history" aria-label={t("aHistory")}>
             <History size={17} />
           </Link>
-          <button className="cal-icon" onClick={() => setShowSettings(true)} aria-label="Settings">
+          <button className="cal-icon" onClick={() => setShowSettings(true)} aria-label={t("aSettings")}>
             <SettingsIcon size={17} />
           </button>
-          <button className="cal-icon" onClick={() => setShowUser(true)} aria-label="Account">
+          <button className="cal-icon" onClick={() => setShowUser(true)} aria-label={t("aAccount")}>
             <User size={17} />
           </button>
         </div>
@@ -371,16 +384,16 @@ export default function TodayPage() {
         <Vessel ratio={ratio} over={over} />
         <div className="cal-hero-r">
           <div className="cal-hero-top">
-            <div className="cal-eyebrow">{dayLabel(tKey)}</div>
+            <div className="cal-eyebrow">{dayLabel(tKey, lang)}</div>
             <button
               className={`cal-switch ${todayType === "training" ? "is-training" : "is-rest"}`}
               onClick={() => setDayType(todayType === "training" ? "rest" : "training")}
               role="switch"
               aria-checked={todayType === "training"}
-              aria-label="Training or rest day"
+              aria-label={`${t("training")} / ${t("rest")}`}
             >
-              <span className="cal-switch-opt rest">Rest</span>
-              <span className="cal-switch-opt training">Training</span>
+              <span className="cal-switch-opt rest">{t("rest")}</span>
+              <span className="cal-switch-opt training">{t("training")}</span>
               <span className="cal-switch-knob" />
             </button>
           </div>
@@ -388,24 +401,24 @@ export default function TodayPage() {
           {hasTarget && remaining != null ? (
             <>
               <div className={`cal-big ${remaining < 0 ? "cal-over" : ""}`}>{Math.abs(remaining)}</div>
-              <div className="cal-big-sub">{remaining < 0 ? "kcal over target" : "kcal left"}</div>
+              <div className="cal-big-sub">{remaining < 0 ? t("kcalOver") : t("kcalLeft")}</div>
               <div className="cal-meter">
                 <span>{eaten}</span>
-                <span className="cal-dim"> of {target} eaten</span>
+                <span className="cal-dim"> {t("ofEaten", { target: target as number })}</span>
               </div>
             </>
           ) : (
             <>
               <div className="cal-big">{eaten}</div>
-              <div className="cal-big-sub">kcal eaten · set a target in settings</div>
+              <div className="cal-big-sub">{t("kcalEatenHint")}</div>
             </>
           )}
 
           <div className="cal-hero-bottom">
             <div className="cal-macros">
-              <Macro label="Protein" val={pSum} target={macroTargets.protein} />
-              <Macro label="Carbs" val={cSum} target={macroTargets.carbs} />
-              <Macro label="Fat" val={fSum} target={macroTargets.fat} />
+              <Macro label={t("protein")} val={pSum} target={macroTargets.protein} />
+              <Macro label={t("carbs")} val={cSum} target={macroTargets.carbs} />
+              <Macro label={t("fat")} val={fSum} target={macroTargets.fat} />
             </div>
           </div>
         </div>
@@ -425,12 +438,12 @@ export default function TodayPage() {
       {/* add food */}
       <section className="cal-card">
         <div className="cal-eyebrow" style={{ marginBottom: 10 }}>
-          Add a meal
+          {t("addMeal")}
         </div>
 
         <textarea
           className="cal-input cal-area"
-          placeholder="What did you eat? e.g. 150g grilled chicken, cup of rice, handful of edamame"
+          placeholder={t("descPlaceholder")}
           value={desc}
           onChange={(e) => setDesc(e.target.value)}
           rows={2}
@@ -440,7 +453,7 @@ export default function TodayPage() {
           <div className="cal-thumb">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src={img.preview} alt="meal" />
-            <button className="cal-thumb-x" onClick={() => setImg(null)} aria-label="Remove photo">
+            <button className="cal-thumb-x" onClick={() => setImg(null)} aria-label="×">
               <X size={14} />
             </button>
           </div>
@@ -455,14 +468,14 @@ export default function TodayPage() {
           >
             {estimating ? (
               <>
-                <Loader2 size={16} className="cal-spin" /> Estimating
+                <Loader2 size={16} className="cal-spin" /> {t("estimating")}
               </>
             ) : (
-              <>Estimate macros</>
+              <>{t("estimate")}</>
             )}
           </button>
           <button className="cal-btn cal-btn-sec" onClick={() => fileRef.current?.click()}>
-            <Camera size={16} /> {img ? "Change photo" : "Add photo"}
+            <Camera size={16} /> {img ? t("changePhoto") : t("addPhoto")}
           </button>
           <button
             className="cal-btn cal-btn-sec"
@@ -471,7 +484,7 @@ export default function TodayPage() {
               setScanning(true);
             }}
           >
-            <Barcode size={16} /> Barcode
+            <Barcode size={16} /> {t("barcode")}
           </button>
         </div>
 
@@ -501,28 +514,28 @@ export default function TodayPage() {
           )}
           <input
             className="cal-input"
-            placeholder="Name (optional)"
+            placeholder={t("namePlaceholder")}
             value={draft.label}
             onChange={(e) => setDraft({ ...draft, label: e.target.value })}
           />
           <div className="cal-fields">
-            <Field label="kcal" value={draft.kcal} onChange={(v) => setDraft({ ...draft, kcal: v })} accent />
-            <Field label="Protein" value={draft.protein} onChange={(v) => setDraft({ ...draft, protein: v })} />
-            <Field label="Carbs" value={draft.carbs} onChange={(v) => setDraft({ ...draft, carbs: v })} />
-            <Field label="Fat" value={draft.fat} onChange={(v) => setDraft({ ...draft, fat: v })} />
+            <Field label={t("fKcal")} value={draft.kcal} onChange={(v) => setDraft({ ...draft, kcal: v })} accent />
+            <Field label={t("fProtein")} value={draft.protein} onChange={(v) => setDraft({ ...draft, protein: v })} />
+            <Field label={t("fCarbs")} value={draft.carbs} onChange={(v) => setDraft({ ...draft, carbs: v })} />
+            <Field label={t("fFat")} value={draft.fat} onChange={(v) => setDraft({ ...draft, fat: v })} />
           </div>
           {draft.note && <div className="cal-note">{draft.note}</div>}
           <div className="cal-row">
             <button className="cal-btn cal-btn-pri" onClick={commitDraft} disabled={!canAdd}>
-              <Check size={16} /> Add to today
+              <Check size={16} /> {t("addToToday")}
             </button>
             <button
               className="cal-btn cal-btn-ghost"
               onClick={saveDraftAsFavourite}
               disabled={!canAdd}
-              title="Save for one-tap logging"
+              title={t("saveFavTitle")}
             >
-              <Star size={15} /> Save as favourite
+              <Star size={15} /> {t("saveFav")}
             </button>
           </div>
         </div>
@@ -531,10 +544,12 @@ export default function TodayPage() {
       {/* today list */}
       <section className="cal-card">
         <div className="cal-eyebrow" style={{ marginBottom: 8 }}>
-          Today · {todays.length} {todays.length === 1 ? "item" : "items"}
+          {todays.length === 1
+            ? t("todayItemOne", { n: todays.length })
+            : t("todayItemMany", { n: todays.length })}
         </div>
         {todays.length === 0 ? (
-          <div className="cal-empty">Nothing logged yet. Add your first meal above.</div>
+          <div className="cal-empty">{t("nothingLogged")}</div>
         ) : (
           <ul className="cal-list">
             {todays.map((e) => (
@@ -549,7 +564,7 @@ export default function TodayPage() {
                   )}
                 </div>
                 <div className="cal-li-k">{e.kcal}</div>
-                <button className="cal-li-del" onClick={() => deleteEntry(e.id)} aria-label="Delete">
+                <button className="cal-li-del" onClick={() => deleteEntry(e.id)} aria-label="×">
                   <Trash2 size={15} />
                 </button>
               </li>
@@ -561,11 +576,9 @@ export default function TodayPage() {
       {/* footer */}
       <div className="cal-foot">
         <Link className="cal-btn cal-btn-ghost" href="/history">
-          <History size={15} /> History &amp; export
+          <History size={15} /> {t("historyExport")}
         </Link>
-        <span className="cal-foot-note">
-          Saved automatically · estimates are approximate, edit before logging
-        </span>
+        <span className="cal-foot-note">{t("footNote")}</span>
       </div>
 
       {/* barcode scanner */}
@@ -573,14 +586,14 @@ export default function TodayPage() {
 
       {/* account */}
       {showUser && (
-        <Modal title="Account" onClose={() => setShowUser(false)}>
+        <Modal title={t("accountTitle")} onClose={() => setShowUser(false)}>
           <div className="cal-srow">
-            <label>Signed in as</label>
+            <label>{t("signedInAs")}</label>
             <span className="cal-user">{username || "—"}</span>
           </div>
           <div className="cal-row" style={{ marginTop: 12 }}>
             <button className="cal-btn cal-btn-sec" onClick={switchUser}>
-              Switch user
+              {t("switchUser")}
             </button>
           </div>
         </Modal>
@@ -588,25 +601,25 @@ export default function TodayPage() {
 
       {/* settings drawer */}
       {showSettings && (
-        <Modal title="Settings" onClose={() => setShowSettings(false)}>
+        <Modal title={t("settingsTitle")} onClose={() => setShowSettings(false)}>
           <div className="cal-eyebrow" style={{ marginBottom: 8 }}>
-            Training day targets
+            {t("trainingTargets")}
           </div>
-          {targetRow("Calories (kcal)", "target", "—")}
-          {targetRow("Protein (g)", "trainingProtein")}
-          {targetRow("Carbs (g)", "trainingCarbs")}
-          {targetRow("Fat (g)", "trainingFat")}
+          {targetRow(t("calories"), "target", "—")}
+          {targetRow(t("proteinG"), "trainingProtein")}
+          {targetRow(t("carbsG"), "trainingCarbs")}
+          {targetRow(t("fatG"), "trainingFat")}
 
           <div className="cal-eyebrow" style={{ margin: "18px 0 8px" }}>
-            Rest day targets
+            {t("restTargets")}
           </div>
-          {targetRow("Calories (kcal)", "restTarget", "same as training")}
-          {targetRow("Protein (g)", "restProtein")}
-          {targetRow("Carbs (g)", "restCarbs")}
-          {targetRow("Fat (g)", "restFat")}
+          {targetRow(t("calories"), "restTarget", t("sameAsTraining"))}
+          {targetRow(t("proteinG"), "restProtein")}
+          {targetRow(t("carbsG"), "restCarbs")}
+          {targetRow(t("fatG"), "restFat")}
 
           <div className="cal-eyebrow" style={{ margin: "18px 0 8px" }}>
-            Training days
+            {t("trainingDays")}
           </div>
           <div className="cal-weekdays">
             {[1, 2, 3, 4, 5, 6, 0].map((d) => (
@@ -615,7 +628,7 @@ export default function TodayPage() {
                 className={`cal-wd ${settings.trainingDays.includes(d) ? "on" : ""}`}
                 onClick={() => toggleTrainingDay(d)}
               >
-                {DAYS_SHORT[d][0]}
+                {lang === "de" ? DAYS_SHORT.de[d] : DAYS_SHORT.en[d][0]}
               </button>
             ))}
           </div>
@@ -623,7 +636,7 @@ export default function TodayPage() {
           {templates.length > 0 && (
             <>
               <div className="cal-eyebrow" style={{ margin: "18px 0 8px" }}>
-                Favourites
+                {t("favourites")}
               </div>
               <ul className="cal-list">
                 {templates.map((t) => (
@@ -635,11 +648,7 @@ export default function TodayPage() {
                       </div>
                     </div>
                     <div className="cal-li-k">{t.kcal}</div>
-                    <button
-                      className="cal-li-del"
-                      onClick={() => deleteTemplate(t.id)}
-                      aria-label="Delete favourite"
-                    >
+                    <button className="cal-li-del" onClick={() => deleteTemplate(t.id)} aria-label="×">
                       <Trash2 size={15} />
                     </button>
                   </li>
