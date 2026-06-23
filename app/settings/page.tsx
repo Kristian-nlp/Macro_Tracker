@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Trash2 } from "lucide-react";
+import { Loader2, Pencil, Trash2 } from "lucide-react";
 import { MacroShape } from "@/components/MacroMarker";
 import { BottomNav } from "@/components/BottomNav";
 import { useLang } from "@/components/LangProvider";
@@ -39,7 +39,7 @@ type NumField =
 // drop focus after every digit).
 function TargetValue({ value, suffix, onChange }: { value: number | null; suffix: string; onChange: (raw: string) => void }) {
   return (
-    <span style={{ display: "inline-flex", alignItems: "baseline", gap: 4 }}>
+    <label className="g-editnum">
       <input
         className="g-fm"
         inputMode="numeric"
@@ -47,10 +47,10 @@ function TargetValue({ value, suffix, onChange }: { value: number | null; suffix
         onChange={(e) => onChange(e.target.value)}
         placeholder="—"
         aria-label={suffix}
-        style={{ width: 64, border: "none", background: "none", textAlign: "right", fontSize: 15, color: "#1B1D17", outline: "none" }}
       />
       <span style={{ color: "#9A9C8F", fontSize: 12 }}>{suffix}</span>
-    </span>
+      <Pencil size={12} className="g-editnum-pencil" />
+    </label>
   );
 }
 

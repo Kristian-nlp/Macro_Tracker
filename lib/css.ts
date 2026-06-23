@@ -87,6 +87,13 @@ html,body{margin:0; padding:0; background:#F4F1E8;}
 textarea.g-input{resize:none; font-family:var(--fg);}
 .g-eye{background:none; border:none; padding:4px; display:grid; place-items:center; color:#9C9E90;}
 .g-eye:hover{color:var(--muted);}
+/* Tappable editable number (Settings targets) — looks like a field, not text. */
+.g-editnum{display:inline-flex; align-items:center; gap:5px; background:var(--paper); border:1px solid var(--border-input); border-radius:10px; padding:6px 9px 6px 11px; cursor:text; transition:border-color .15s ease, background .15s ease;}
+.g-editnum:focus-within{border-color:var(--sage); background:var(--surface);}
+.g-editnum input{border:none; background:none; outline:none; text-align:right; font-size:15px; color:var(--ink); width:52px; padding:0;}
+.g-editnum input::placeholder{color:#B7B9AC;}
+.g-editnum .g-editnum-pencil{flex:none; color:#B7B9AC;}
+.g-editnum:focus-within .g-editnum-pencil{color:var(--sage);}
 
 /* ---- sheets (Add a meal / Review estimate) ---- */
 .g-sheet-bg{position:fixed; inset:0; background:rgba(24,26,20,.42); backdrop-filter:blur(2px); display:flex; align-items:flex-end; justify-content:center; z-index:50;}
