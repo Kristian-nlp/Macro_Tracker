@@ -268,27 +268,25 @@ export default function TodayPage() {
         </div>
       </header>
 
-      {/* day-type toggle */}
-      <div className="cal-daytoggle" role="group" aria-label="Day type">
-        {(["training", "rest"] as const).map((t) => (
-          <button
-            key={t}
-            className={`cal-dtb ${todayType === t ? "on" : ""}`}
-            onClick={() => setDayType(t)}
-            aria-pressed={todayType === t}
-          >
-            {t === "training" ? "Training day" : "Rest day"}
-          </button>
-        ))}
-      </div>
-
       {/* hero */}
       <section className="cal-card cal-hero">
         <Vessel ratio={ratio} over={over} />
         <div className="cal-hero-r">
-          <div className="cal-eyebrow">
-            {dayLabel(tKey)} · {todayType === "training" ? "training day" : "rest day"}
+          <div className="cal-hero-top">
+            <div className="cal-eyebrow">{dayLabel(tKey)}</div>
+            <button
+              className={`cal-switch ${todayType === "training" ? "is-training" : "is-rest"}`}
+              onClick={() => setDayType(todayType === "training" ? "rest" : "training")}
+              role="switch"
+              aria-checked={todayType === "training"}
+              aria-label="Training or rest day"
+            >
+              <span className="cal-switch-opt rest">Rest</span>
+              <span className="cal-switch-opt training">Training</span>
+              <span className="cal-switch-knob" />
+            </button>
           </div>
+
           {hasTarget && remaining != null ? (
             <>
               <div className={`cal-big ${remaining < 0 ? "cal-over" : ""}`}>{Math.abs(remaining)}</div>
@@ -300,24 +298,20 @@ export default function TodayPage() {
             </>
           ) : (
             <>
-              <div className="cal-big cal-dim" style={{ fontSize: 26, lineHeight: 1.15 }}>
-                Set your
-                <br />
-                target
-              </div>
-              <button
-                className="cal-btn cal-btn-pri"
-                style={{ marginTop: 12 }}
-                onClick={() => setShowSettings(true)}
-              >
-                Open settings
-              </button>
+              <div className="cal-big">{eaten}</div>
+              <div className="cal-big-sub">kcal eaten · set a target in settings</div>
             </>
           )}
-          <div className="cal-macros">
-            <Macro label="Protein" val={pSum} target={settings.proteinTarget} />
-            <Macro label="Carbs" val={cSum} />
-            <Macro label="Fat" val={fSum} />
+
+          <div className="cal-hero-bottom">
+            <div className="cal-macros">
+              <Macro label="Protein" val={pSum} target={settings.proteinTarget} />
+              <Macro label="Carbs" val={cSum} />
+              <Macro label="Fat" val={fSum} />
+            </div>
+            <button className="cal-hero-settings" onClick={() => setShowSettings(true)}>
+              <SettingsIcon size={13} /> Settings
+            </button>
           </div>
         </div>
       </section>
