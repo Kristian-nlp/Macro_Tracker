@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { eq } from "drizzle-orm";
 import { getDb } from "@/lib/db";
 import { settings } from "@/lib/schema";
+import { currentUser } from "@/lib/auth-server";
 import type { Settings } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -29,18 +30,23 @@ function toClient(row: typeof settings.$inferSelect): Settings {
 }
 
 export async function GET() {
+  const username = currentUser();
+  if (!username) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
   const db = getDb();
-  let [row] = await db.select().from(settings).where(eq(settings.id, 1));
+  let [row] = await db.select().from(settings).where(eq(settings.username, username));
   if (!row) {
-    await db.insert(settings).values({ id: 1 }).onConflictDoNothing();
-    [row] = await db.select().from(settings).where(eq(settings.id, 1));
+    await db.insert(settings).values({ username }).onConflictDoNothing();
+    [row] = await db.select().from(settings).where(eq(settings.username, username));
   }
   return NextResponse.json(toClient(row));
 }
 
 export async function PUT(req: Request) {
-  const b = await req.json().catch(() => ({}));
+  const username = currentUser();
+  if (!username) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
 
+  const b = await req.json().catch(() => ({}));
   const values = {
     target: numOrNull(b.target),
     trainingProtein: numOrNull(b.trainingProtein),
@@ -59,11 +65,10 @@ export async function PUT(req: Request) {
         : {},
   };
 
-  const db = getDb();
-  await db
+  await getDb()
     .insert(settings)
-    .values({ id: 1, ...values })
-    .onConflictDoUpdate({ target: settings.id, set: values });
+    .values({ username, ...values })
+    .onConflictDoUpdate({ target: settings.username, set: values });
 
   return NextResponse.json({ ...values } satisfies Settings);
 }

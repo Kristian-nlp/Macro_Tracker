@@ -13,6 +13,7 @@ import {
   Settings as SettingsIcon,
   Star,
   Trash2,
+  User,
   X,
 } from "lucide-react";
 import { Vessel } from "@/components/Vessel";
@@ -74,6 +75,8 @@ export default function TodayPage() {
   const [estErr, setEstErr] = useState("");
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [showSettings, setShowSettings] = useState(false);
+  const [showUser, setShowUser] = useState(false);
+  const [username, setUsername] = useState("");
   const fileRef = useRef<HTMLInputElement>(null);
 
   // barcode scanning
@@ -87,11 +90,13 @@ export default function TodayPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [s, e, t] = await Promise.all([
+        const [me, s, e, t] = await Promise.all([
+          api.getMe(),
           api.getSettings(),
           api.getEntriesForDate(tKey),
           api.getTemplates(),
         ]);
+        setUsername(me.username);
         setSettings(s);
         setTodays(e);
         setTemplates(t);
@@ -270,6 +275,14 @@ export default function TodayPage() {
     addEntry({ label: t.name, kcal: t.kcal, protein: t.protein, carbs: t.carbs, fat: t.fat, note: "" });
   }
 
+  async function switchUser() {
+    try {
+      await fetch("/api/auth/logout", { method: "POST" });
+    } finally {
+      window.location.href = "/login";
+    }
+  }
+
   async function deleteTemplate(id: string) {
     const prev = templates;
     setTemplates((cur) => cur.filter((t) => t.id !== id));
@@ -346,6 +359,9 @@ export default function TodayPage() {
           </Link>
           <button className="cal-icon" onClick={() => setShowSettings(true)} aria-label="Settings">
             <SettingsIcon size={17} />
+          </button>
+          <button className="cal-icon" onClick={() => setShowUser(true)} aria-label="Account">
+            <User size={17} />
           </button>
         </div>
       </header>
@@ -554,6 +570,21 @@ export default function TodayPage() {
 
       {/* barcode scanner */}
       {scanning && <BarcodeScanner onDetected={onBarcode} onClose={() => setScanning(false)} />}
+
+      {/* account */}
+      {showUser && (
+        <Modal title="Account" onClose={() => setShowUser(false)}>
+          <div className="cal-srow">
+            <label>Signed in as</label>
+            <span className="cal-user">{username || "—"}</span>
+          </div>
+          <div className="cal-row" style={{ marginTop: 12 }}>
+            <button className="cal-btn cal-btn-sec" onClick={switchUser}>
+              Switch user
+            </button>
+          </div>
+        </Modal>
+      )}
 
       {/* settings drawer */}
       {showSettings && (

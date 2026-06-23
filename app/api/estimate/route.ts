@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { clientIp, rateLimit } from "@/lib/rate-limit";
+import { currentUser } from "@/lib/auth-server";
 import type { EstimateResult } from "@/lib/types";
 
 export const runtime = "nodejs";
@@ -15,8 +16,10 @@ const ALLOWED_MEDIA = new Set(["image/jpeg", "image/png", "image/webp", "image/g
 const clampInt = (v: unknown) => Math.max(0, Math.round(Number(v) || 0));
 
 export async function POST(req: Request) {
-  // Rate limit per IP. The app is open (no sign-in), so this is the main guard
-  // stopping a stray URL from running up an OpenAI bill.
+  // Must be signed in, and rate-limited per IP, so nobody can run up an OpenAI
+  // bill through this endpoint.
+  if (!currentUser()) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
   const limit = rateLimit(`estimate:${clientIp(req)}`, 20, 60_000);
   if (!limit.ok) {
     return NextResponse.json(

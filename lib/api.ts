@@ -1,10 +1,14 @@
-// Thin client-side fetch helpers. All requests are same-origin. The app is open
-// (no sign-in), so there is no auth header to attach.
+// Thin client-side fetch helpers. All requests are same-origin and rely on the
+// httpOnly session cookie set at login; on 401 we bounce to the login screen.
 
 import type { Entry, EstimateResult, Settings, Template } from "./types";
 
 async function getJSON<T>(url: string): Promise<T> {
   const res = await fetch(url, { cache: "no-store" });
+  if (res.status === 401) {
+    window.location.href = "/login";
+    throw new Error("unauthorized");
+  }
   if (!res.ok) throw new Error(`GET ${url} failed: ${res.status}`);
   return res.json() as Promise<T>;
 }
@@ -15,11 +19,18 @@ async function sendJSON<T>(url: string, method: string, body?: unknown): Promise
     headers: { "Content-Type": "application/json" },
     body: body === undefined ? undefined : JSON.stringify(body),
   });
+  if (res.status === 401) {
+    window.location.href = "/login";
+    throw new Error("unauthorized");
+  }
   if (!res.ok) throw new Error(`${method} ${url} failed: ${res.status}`);
   return res.json() as Promise<T>;
 }
 
 export const api = {
+  // account
+  getMe: () => getJSON<{ username: string }>("/api/auth/me"),
+
   // entries
   getEntriesForDate: (date: string) => getJSON<Entry[]>(`/api/entries?date=${date}`),
   getEntriesInRange: (from: string, to: string) =>

@@ -1,10 +1,19 @@
 import { index, integer, jsonb, pgTable, text, timestamp } from "drizzle-orm/pg-core";
 
-/** One row per logged meal. */
+/** Accounts: username + a hashed 4-digit PIN. */
+export const users = pgTable("users", {
+  username: text("username").primaryKey(),
+  pinSalt: text("pin_salt").notNull(),
+  pinHash: text("pin_hash").notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+});
+
+/** One row per logged meal, scoped to a user. */
 export const entries = pgTable(
   "entries",
   {
     id: text("id").primaryKey(),
+    username: text("username").notNull(),
     date: text("date").notNull(), // YYYY-MM-DD (user-local)
     time: text("time").notNull(), // HH:MM (user-local)
     label: text("label").notNull(),
@@ -16,13 +25,14 @@ export const entries = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => ({
-    dateIdx: index("entries_date_idx").on(t.date),
+    userDateIdx: index("entries_user_date_idx").on(t.username, t.date),
   }),
 );
 
-/** Single-row settings (id is always 1). */
+/** One settings row per user (keyed by username; a surrogate `id` exists in the
+ * table with a sequence default but is not modeled here). */
 export const settings = pgTable("settings", {
-  id: integer("id").primaryKey(),
+  username: text("username").primaryKey(),
   // Training-day targets (all nullable: set in app, no hardcoded targets)
   target: integer("target"), // training-day kcal target
   trainingProtein: integer("training_protein"),
@@ -39,9 +49,10 @@ export const settings = pgTable("settings", {
   overrides: jsonb("overrides").$type<Record<string, string>>().notNull().default({}),
 });
 
-/** Favourites for one-tap logging. */
+/** Favourites for one-tap logging, scoped to a user. */
 export const templates = pgTable("templates", {
   id: text("id").primaryKey(),
+  username: text("username").notNull(),
   name: text("name").notNull(),
   kcal: integer("kcal").notNull(),
   protein: integer("protein").notNull().default(0),

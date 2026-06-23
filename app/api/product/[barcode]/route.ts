@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { currentUser } from "@/lib/auth-server";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,6 +12,8 @@ function num(v: unknown): number | null {
 // Look up a scanned barcode in Open Food Facts (free, no API key). Returns
 // normalized per-100g macros plus the product name and serving size (if known).
 export async function GET(_req: Request, { params }: { params: { barcode: string } }) {
+  if (!currentUser()) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
+
   const code = (params.barcode || "").replace(/[^0-9]/g, "");
   if (!code) return NextResponse.json({ found: false }, { status: 400 });
 
