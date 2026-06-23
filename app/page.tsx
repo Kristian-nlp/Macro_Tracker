@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import dynamic from "next/dynamic";
-import { Camera, Check, Loader2, Pencil, X } from "lucide-react";
+import { Camera, Check, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { DotGrid } from "@/components/DotGrid";
 import { MacroMarker, MacroShape } from "@/components/MacroMarker";
 import { MealRow } from "@/components/MealRow";
@@ -12,6 +12,7 @@ import { api } from "@/lib/api";
 import { downscale, type Downscaled } from "@/lib/image";
 import { dateLong, nowTime, slotKey, todayKey, weekdayLongUpper, weekdayOf } from "@/lib/date";
 import { dominantMacro, MACRO, type MacroKey } from "@/lib/macros";
+import { getHeroView, type HeroView } from "@/lib/prefs";
 import type { DayType, Entry, EstimateResult, Settings, Template } from "@/lib/types";
 
 const BarcodeScanner = dynamic(() => import("@/components/BarcodeScanner"), { ssr: false });
@@ -34,6 +35,18 @@ const DEFAULT_SETTINGS: Settings = {
 const PORTIONS = [0.5, 1, 1.5, 2] as const;
 const PORTION_LABELS = ["½", "1", "1½", "2"];
 const PILL_TEXT: Record<MacroKey, string> = { protein: "#41503A", carbs: "#8A4A2C", fat: "#8A6A24" };
+
+// Bordered, tappable editable number (meal detail view). Module-level so the
+// input stays mounted across keystrokes.
+function EditNum({ value, onChange, suffix, ariaLabel }: { value: string; onChange: (v: string) => void; suffix: string; ariaLabel: string }) {
+  return (
+    <label className="g-editnum">
+      <input className="g-fm" inputMode="numeric" value={value} onChange={(e) => onChange(e.target.value.replace(/\D/g, "").slice(0, 5))} aria-label={ariaLabel} />
+      <span style={{ color: "#9A9C8F", fontSize: 12 }}>{suffix}</span>
+      <Pencil size={12} className="g-editnum-pencil" />
+    </label>
+  );
+}
 
 // A Today macro card: marker + name, current/target (mono), thin progress bar.
 function MacroCard({ macro, name, val, tgt }: { macro: MacroKey; name: string; val: number; tgt: number | null | undefined }) {
@@ -75,6 +88,10 @@ export default function TodayPage() {
   // barcode
   const [scanning, setScanning] = useState(false);
 
+  // display preference + meal detail/edit
+  const [heroView, setHeroView] = useState<HeroView>("left");
+  const [edit, setEdit] = useState<{ id: string; label: string; kcal: string; protein: string; carbs: string; fat: string; note: string | null } | null>(null);
+
   // review
   const [est, setEst] = useState<EstimateResult | null>(null);
   const [label, setLabel] = useState("");
@@ -101,6 +118,7 @@ export default function TodayPage() {
       }
       setLoaded(true);
     })();
+    setHeroView(getHeroView());
     // open the Add sheet when arriving from the bottom-nav `+` on another tab
     if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("add") === "1") {
       setSheet("add");
@@ -122,6 +140,16 @@ export default function TodayPage() {
   const hasTarget = target > 0;
   const remaining = target - eaten;
   const over = hasTarget && eaten > target;
+
+  // Hero number: "calories left" or "calories eaten" per the saved preference.
+  const showConsumed = !hasTarget || heroView === "consumed";
+  const heroOverline = showConsumed ? (hasTarget ? t("caloriesEaten") : t("eatenLabel")) : t("calsLeft");
+  const heroBig = showConsumed ? eaten : Math.abs(remaining);
+  const heroSub = !hasTarget
+    ? t("noTargetEatenHint")
+    : showConsumed || !over
+      ? t("ofTargetKcal", { target: fmt(target) })
+      : t("kcalOverBudget");
 
   const macroTargets =
     todayType === "rest"
@@ -162,6 +190,51 @@ export default function TodayPage() {
       setTodays(prev);
     }
   }
+
+  function openEdit(e: Entry) {
+    setEdit({
+      id: e.id,
+      label: e.label,
+      kcal: String(e.kcal),
+      protein: String(e.protein),
+      carbs: String(e.carbs),
+      fat: String(e.fat),
+      note: e.note,
+    });
+  }
+
+  async function saveEdit() {
+    if (!edit) return;
+    const id = edit.id;
+    const patch = {
+      label: edit.label.trim() || t("addMeal"),
+      kcal: Math.round(Number(edit.kcal) || 0),
+      protein: Math.round(Number(edit.protein) || 0),
+      carbs: Math.round(Number(edit.carbs) || 0),
+      fat: Math.round(Number(edit.fat) || 0),
+      note: edit.note ?? "",
+    };
+    const prev = todays;
+    setTodays((cur) => cur.map((e) => (e.id === id ? { ...e, ...patch } : e)));
+    setEdit(null);
+    try {
+      const saved = await api.updateEntry(id, patch);
+      setTodays((cur) => cur.map((e) => (e.id === id ? saved : e)));
+    } catch {
+      setTodays(prev);
+    }
+  }
+
+  function deleteFromEdit() {
+    if (!edit) return;
+    const id = edit.id;
+    setEdit(null);
+    deleteEntry(id);
+  }
+
+  const editDom: MacroKey = edit
+    ? dominantMacro(Number(edit.protein) || 0, Number(edit.carbs) || 0, Number(edit.fat) || 0)
+    : "protein";
 
   async function onPickFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files && e.target.files[0];
@@ -324,14 +397,12 @@ export default function TodayPage() {
 
         {/* hero card */}
         <div style={{ margin: "18px 28px 0", background: "#FCFAF4", border: "1px solid #E8E4D6", borderRadius: 24, padding: "22px 22px 20px" }}>
-          {overline(hasTarget ? t("calsLeft") : t("eatenLabel"))}
+          {overline(heroOverline)}
           <div style={{ display: "flex", alignItems: "flex-end", gap: 10, marginTop: 8 }}>
             <span className="g-fg" style={{ fontWeight: 700, fontSize: 54, lineHeight: 0.9, letterSpacing: "-.03em", color: over ? "#BC6440" : "#1B1D17" }}>
-              {hasTarget ? fmt(Math.abs(remaining)) : fmt(eaten)}
+              {fmt(heroBig)}
             </span>
-            <span style={{ fontSize: 14, color: "#7A7E6F", marginBottom: 6 }}>
-              {hasTarget ? (over ? t("kcalOverBudget") : t("ofTargetKcal", { target: fmt(target) })) : t("noTargetEatenHint")}
-            </span>
+            <span style={{ fontSize: 14, color: "#7A7E6F", marginBottom: 6 }}>{heroSub}</span>
           </div>
           <DotGrid consumed={eaten} target={hasTarget ? target : 0} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16, fontSize: 11.5, color: "#9A9C8F" }}>
@@ -375,6 +446,7 @@ export default function TodayPage() {
                 protein={e.protein}
                 carbs={e.carbs}
                 fat={e.fat}
+                onOpen={() => openEdit(e)}
                 onDelete={() => deleteEntry(e.id)}
                 deleteLabel={t("aDelete")}
               />
@@ -604,6 +676,61 @@ export default function TodayPage() {
               </button>
               <button className="g-btn g-btn-ghost" onClick={saveReviewFavourite} disabled={rKcal <= 0} style={{ marginTop: 4 }}>
                 {t("saveToFav")}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ---------- Meal detail / edit sheet ---------- */}
+      {edit && (
+        <div className="g-sheet-bg" onClick={() => setEdit(null)}>
+          <div className="g-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="g-sheet-grab"><span /></div>
+            <div className="g-sheet-head">
+              <span className="g-sheet-title">{t("editMeal")}</span>
+              <button className="g-sheet-x" onClick={() => setEdit(null)} aria-label="×"><X size={16} /></button>
+            </div>
+            <div className="g-sheet-body">
+              {/* name + dominant marker */}
+              <div style={{ display: "flex", alignItems: "center", gap: 14, background: "#FCFAF4", border: "1px solid #E4E0D2", borderRadius: 18, padding: 16, marginTop: 8 }}>
+                <div style={{ width: 54, height: 54, flex: "none", borderRadius: 15, background: MACRO[editDom].tint, display: "grid", placeItems: "center" }}>
+                  <MacroShape macro={editDom} size={editDom === "fat" ? 22 : 20} />
+                </div>
+                <input
+                  className="g-input"
+                  value={edit.label}
+                  onChange={(e2) => setEdit({ ...edit, label: e2.target.value })}
+                  placeholder={t("namePlaceholder")}
+                  aria-label={t("namePlaceholder")}
+                  style={{ flex: 1, minWidth: 0, padding: "10px 12px", fontSize: 16 }}
+                />
+              </div>
+
+              {/* editable values */}
+              <div style={{ background: "#FCFAF4", border: "1px solid #E4E0D2", borderRadius: 18, padding: "6px 18px", marginTop: 12 }}>
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: "1px solid #EBE7D9" }}>
+                  <span className="g-fg" style={{ fontSize: 15, color: "#1B1D17" }}>{t("caloriesLabel")}</span>
+                  <EditNum value={edit.kcal} onChange={(v) => setEdit({ ...edit, kcal: v })} suffix={t("xlKcal")} ariaLabel={t("caloriesLabel")} />
+                </div>
+                {(["protein", "carbs", "fat"] as const).map((k, i) => (
+                  <div key={k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 0", borderBottom: i < 2 ? "1px solid #EBE7D9" : "none" }}>
+                    <span style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <MacroShape macro={k} size={10} />
+                      <span className="g-fg" style={{ fontSize: 15, color: "#1B1D17" }}>{t(k)}</span>
+                    </span>
+                    <EditNum value={edit[k]} onChange={(v) => setEdit({ ...edit, [k]: v })} suffix="g" ariaLabel={t(k)} />
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div style={{ flex: "none", padding: "14px 26px 30px", background: "linear-gradient(to top,#EFECE3 70%,rgba(239,236,227,0))" }}>
+              <button className="g-btn g-btn-pri" onClick={saveEdit}>
+                <Check size={16} /> {t("saveChanges")}
+              </button>
+              <button className="g-btn g-btn-ghost" onClick={deleteFromEdit} style={{ marginTop: 4, color: "#BC6440" }}>
+                <Trash2 size={15} /> {t("deleteMeal")}
               </button>
             </div>
           </div>

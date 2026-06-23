@@ -131,6 +131,7 @@ export const T = {
 
     // ---- The Grid redesign ----
     calsLeft: "Calories left",
+    caloriesEaten: "Calories eaten",
     ofTargetKcal: "of {target} kcal",
     kcalOverBudget: "kcal over budget",
     noTargetEatenHint: "kcal eaten · set a target in Settings",
@@ -158,6 +159,13 @@ export const T = {
     kcalSlashDay: "kcal / day",
     onTarget: "on target",
     recentDays: "Recent days",
+    displaySection: "Display",
+    todayNumber: "Today's number",
+    heroLeft: "Left",
+    heroEaten: "Eaten",
+    editMeal: "Edit meal",
+    saveChanges: "Save changes",
+    deleteMeal: "Delete meal",
     dailyTargets: "Daily targets",
     trainingDayRow: "Training day",
     restDayRow: "Rest day",
@@ -319,6 +327,7 @@ export const T = {
 
     // ---- The Grid redesign ----
     calsLeft: "Kalorien übrig",
+    caloriesEaten: "Kalorien gegessen",
     ofTargetKcal: "von {target} kcal",
     kcalOverBudget: "kcal über Budget",
     noTargetEatenHint: "kcal gegessen · Ziel in den Einstellungen setzen",
@@ -346,6 +355,13 @@ export const T = {
     kcalSlashDay: "kcal / Tag",
     onTarget: "im Ziel",
     recentDays: "Letzte Tage",
+    displaySection: "Anzeige",
+    todayNumber: "Zahl auf Heute",
+    heroLeft: "Übrig",
+    heroEaten: "Gegessen",
+    editMeal: "Mahlzeit bearbeiten",
+    saveChanges: "Änderungen speichern",
+    deleteMeal: "Mahlzeit löschen",
     dailyTargets: "Tagesziele",
     trainingDayRow: "Trainingstag",
     restDayRow: "Ruhetag",

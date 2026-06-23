@@ -37,6 +37,8 @@ export const api = {
   getEntriesInRange: (from: string, to: string) =>
     getJSON<Entry[]>(`/api/entries?from=${from}&to=${to}`),
   addEntry: (entry: Omit<Entry, "id">) => sendJSON<Entry>("/api/entries", "POST", entry),
+  updateEntry: (id: string, patch: Pick<Entry, "label" | "kcal" | "protein" | "carbs" | "fat" | "note">) =>
+    sendJSON<Entry>(`/api/entries/${id}`, "PATCH", patch),
   deleteEntry: (id: string) => sendJSON<{ ok: true }>(`/api/entries/${id}`, "DELETE"),
 
   // settings

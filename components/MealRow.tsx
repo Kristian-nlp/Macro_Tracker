@@ -13,6 +13,7 @@ export function MealRow({
   protein,
   carbs,
   fat,
+  onOpen,
   onDelete,
   deleteLabel,
 }: {
@@ -22,6 +23,7 @@ export function MealRow({
   protein: number;
   carbs: number;
   fat: number;
+  onOpen?: () => void;
   onDelete?: () => void;
   deleteLabel?: string;
 }) {
@@ -37,12 +39,17 @@ export function MealRow({
   return (
     <div
       className="g-meal"
+      onClick={onOpen}
+      onKeyDown={onOpen ? (e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), onOpen()) : undefined}
+      role={onOpen ? "button" : undefined}
+      tabIndex={onOpen ? 0 : undefined}
       style={{
         display: "flex",
         alignItems: "center",
         gap: 14,
         padding: "11px 0",
         borderBottom: "1px solid #E4E1D3",
+        cursor: onOpen ? "pointer" : undefined,
       }}
     >
       <MacroMarker protein={protein} carbs={carbs} fat={fat} />
@@ -78,7 +85,14 @@ export function MealRow({
         </div>
       </div>
       {onDelete && (
-        <button className="g-meal-del" onClick={onDelete} aria-label={deleteLabel || "Delete"}>
+        <button
+          className="g-meal-del"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDelete();
+          }}
+          aria-label={deleteLabel || "Delete"}
+        >
           <Trash2 size={15} />
         </button>
       )}
