@@ -45,15 +45,15 @@ export function BottomNav({
   return (
     <nav className="g-nav">
       <Link href="/" className={`g-nav-item ${active === "today" ? "is-active" : ""}`} aria-current={active === "today" ? "page" : undefined}>
-        <TodayIcon />
+        <span className="g-nav-ico"><TodayIcon /></span>
         <span>{labels.today}</span>
       </Link>
       <Link href="/history" className={`g-nav-item ${active === "history" ? "is-active" : ""}`} aria-current={active === "history" ? "page" : undefined}>
-        <HistoryIcon />
+        <span className="g-nav-ico"><HistoryIcon /></span>
         <span>{labels.history}</span>
       </Link>
       <Link href="/settings" className={`g-nav-item ${active === "settings" ? "is-active" : ""}`} aria-current={active === "settings" ? "page" : undefined}>
-        <SettingsIcon />
+        <span className="g-nav-ico"><SettingsIcon /></span>
         <span>{labels.settings}</span>
       </Link>
       <div className="g-nav-plus">

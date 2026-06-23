@@ -55,7 +55,10 @@ html,body{margin:0; padding:0; background:#F4F1E8;}
 .g-nav{display:flex; align-items:flex-end; justify-content:space-around; height:84px; padding:10px 20px 16px; background:var(--paper); border-top:1px solid #E3E0D2;}
 .g-nav-item{display:flex; flex-direction:column; align-items:center; gap:5px; flex:1; background:none; border:none; padding:0; color:#A0A294; transition:color .15s ease;}
 .g-nav-item.is-active{color:var(--sage);}
-.g-nav-item span{font-size:10px; letter-spacing:.05em; font-weight:600;}
+.g-nav-item > span:last-child{font-size:10px; letter-spacing:.05em; font-weight:600;}
+/* pill highlight behind the active tab's icon */
+.g-nav-ico{display:grid; place-items:center; width:46px; height:30px; border-radius:999px; transition:background .18s ease;}
+.g-nav-item.is-active .g-nav-ico{background:var(--sage-tint);}
 .g-nav-plus{display:flex; flex-direction:column; align-items:center; flex:1;}
 .g-nav-plus-btn{width:54px; height:54px; border-radius:50%; background:var(--sage); display:grid; place-items:center; border:none; margin-top:-26px; box-shadow:0 12px 22px -8px rgba(85,101,76,.6);}
 .g-nav-plus-btn:hover{background:var(--sage-deep);}
