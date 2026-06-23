@@ -111,6 +111,11 @@ textarea.g-input{resize:none; font-family:var(--fg);}
 .g-sheet-x:hover{background:#DEDBCD;}
 .g-sheet-body{flex:1; min-height:0; overflow:auto; padding:0 26px; -webkit-overflow-scrolling:touch;}
 
+/* ---- editable calorie number (Review / manual entry) ---- */
+.g-kcal-edit{display:block; font-family:var(--fg); font-weight:700; font-size:40px; color:var(--ink); letter-spacing:-.02em; line-height:1; border:none; border-bottom:1.5px dashed #CFCBBC; background:none; outline:none; padding:0 0 2px; min-width:2ch;}
+.g-kcal-edit:focus{border-bottom-color:var(--sage);}
+.g-kcal-edit::placeholder{color:#C7C3B5;}
+
 /* ---- review steppers ---- */
 .g-step{width:30px; height:30px; border-radius:50%; display:grid; place-items:center; font-size:18px; line-height:1; border:none; background:none;}
 .g-step-minus{border:1px solid #D7D3C5; color:#7A7E6F;}

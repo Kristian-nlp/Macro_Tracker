@@ -103,12 +103,14 @@ export default function TodayPage() {
   const [heroMetric, setHeroMetricState] = useState<HeroMetric>("calories");
   const [edit, setEdit] = useState<{ id: string; label: string; kcal: string; protein: string; carbs: string; fat: string; note: string | null } | null>(null);
 
-  // review
+  // review / manual entry. `vals` are the editable working numbers; `portion`
+  // rescales them from the original estimate. `manual` = entered by hand (no AI).
   const [est, setEst] = useState<EstimateResult | null>(null);
   const [label, setLabel] = useState("");
   const [editingName, setEditingName] = useState(false);
+  const [manual, setManual] = useState(false);
   const [portion, setPortion] = useState(1);
-  const [adj, setAdj] = useState({ protein: 0, carbs: 0, fat: 0 });
+  const [vals, setVals] = useState({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
 
   const tKey = todayKey();
 
@@ -317,50 +319,68 @@ export default function TodayPage() {
   function openReview(r: EstimateResult) {
     setEst(r);
     setLabel(r.label);
+    setManual(false);
     setPortion(1);
-    setAdj({ protein: 0, carbs: 0, fat: 0 });
+    setVals({ kcal: r.kcal, protein: r.protein, carbs: r.carbs, fat: r.fat });
     setEditingName(false);
     setSheet("review");
   }
 
-  // review derived values
-  const rv = (k: "kcal" | "protein" | "carbs" | "fat") => {
-    if (!est) return 0;
-    const base = Math.round(est[k] * portion);
-    return k === "kcal" ? base : Math.max(0, base + adj[k]);
-  };
-  const rKcal = rv("kcal");
-  const rP = rv("protein");
-  const rC = rv("carbs");
-  const rF = rv("fat");
-  const rDom = dominantMacro(rP, rC, rF);
+  // Log a meal by hand — no estimate. Every field is optional.
+  function openManual() {
+    setEst(null);
+    setLabel("");
+    setManual(true);
+    setPortion(1);
+    setVals({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
+    setEditingName(true);
+    setSheet("review");
+  }
 
+  const rDom = dominantMacro(vals.protein, vals.carbs, vals.fat);
+  const hasAnyVal = vals.kcal > 0 || vals.protein > 0 || vals.carbs > 0 || vals.fat > 0;
+
+  // Portion rescales every value from the original estimate.
+  function applyPortion(p: number) {
+    if (!est) return;
+    setPortion(p);
+    setVals({
+      kcal: Math.round(est.kcal * p),
+      protein: Math.round(est.protein * p),
+      carbs: Math.round(est.carbs * p),
+      fat: Math.round(est.fat * p),
+    });
+  }
+
+  function setVal(k: "kcal" | "protein" | "carbs" | "fat", v: number) {
+    setVals((cur) => ({ ...cur, [k]: Math.max(0, v) }));
+  }
   function stepMacro(k: "protein" | "carbs" | "fat", d: number) {
-    setAdj((a) => ({ ...a, [k]: a[k] + d }));
+    setVals((cur) => ({ ...cur, [k]: Math.max(0, cur[k] + d) }));
   }
 
   function commitReview() {
-    if (rKcal <= 0) return;
+    if (!hasAnyVal) return;
     addEntry({
       label: label.trim() || est?.label || t("addMeal"),
-      kcal: rKcal,
-      protein: rP,
-      carbs: rC,
-      fat: rF,
+      kcal: vals.kcal,
+      protein: vals.protein,
+      carbs: vals.carbs,
+      fat: vals.fat,
       note: est?.note || "",
     });
     resetFlow();
   }
 
   async function saveReviewFavourite() {
-    if (rKcal <= 0) return;
+    if (!hasAnyVal) return;
     try {
       const saved = await api.addTemplate({
         name: label.trim() || est?.label || t("addMeal"),
-        kcal: rKcal,
-        protein: rP,
-        carbs: rC,
-        fat: rF,
+        kcal: vals.kcal,
+        protein: vals.protein,
+        carbs: vals.carbs,
+        fat: vals.fat,
       });
       setTemplates((prev) => [...prev, saved]);
     } catch {
@@ -381,6 +401,9 @@ export default function TodayPage() {
     setLabel("");
     setEstErr("");
     setEditingName(false);
+    setManual(false);
+    setPortion(1);
+    setVals({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
   }
 
   const mostlyKey = (p: number, c: number, f: number) =>
@@ -587,6 +610,21 @@ export default function TodayPage() {
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B7B9AC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
               </button>
 
+              {/* enter manually (no AI) */}
+              <button
+                onClick={openManual}
+                style={{ display: "flex", alignItems: "center", gap: 14, width: "100%", textAlign: "left", background: "#FCFAF4", border: "1px solid #E4E0D2", borderRadius: 16, padding: "14px 16px", marginTop: 10 }}
+              >
+                <span style={{ width: 40, height: 40, flex: "none", borderRadius: 12, background: "#E7EADF", display: "grid", placeItems: "center" }}>
+                  <Pencil size={20} color="#55654C" />
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span className="g-fg" style={{ display: "block", fontWeight: 600, fontSize: 15, color: "#1B1D17" }}>{t("enterManually")}</span>
+                  <span style={{ display: "block", fontSize: 12, color: "#9A9C8F", marginTop: 2 }}>{t("enterManuallySub")}</span>
+                </span>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#B7B9AC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
+              </button>
+
               {/* favourites */}
               {templates.length > 0 && (
                 <>
@@ -612,13 +650,13 @@ export default function TodayPage() {
         </div>
       )}
 
-      {/* ---------- Review estimate sheet ---------- */}
-      {sheet === "review" && est && (
+      {/* ---------- Review estimate / manual entry sheet ---------- */}
+      {sheet === "review" && (
         <div className="g-sheet-bg" onClick={resetFlow}>
           <div className="g-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="g-sheet-grab"><span /></div>
             <div className="g-sheet-head">
-              <span className="g-sheet-title">{t("reviewTitle")}</span>
+              <span className="g-sheet-title">{manual ? t("addMeal") : t("reviewTitle")}</span>
               <button className="g-sheet-x" onClick={resetFlow} aria-label="×"><X size={16} /></button>
             </div>
             <div className="g-sheet-body">
@@ -636,67 +674,88 @@ export default function TodayPage() {
                       onChange={(e) => setLabel(e.target.value)}
                       onBlur={() => setEditingName(false)}
                       onKeyDown={(e) => e.key === "Enter" && setEditingName(false)}
+                      placeholder={t("namePlaceholder")}
                       style={{ padding: "6px 8px", borderRadius: 10, fontSize: 16 }}
                     />
                   ) : (
                     <button onClick={() => setEditingName(true)} style={{ display: "flex", alignItems: "center", gap: 7, background: "none", border: "none", padding: 0, textAlign: "left" }}>
-                      <span className="g-fg" style={{ fontWeight: 600, fontSize: 17, color: "#1B1D17" }}>{label || est.label}</span>
+                      <span className="g-fg" style={{ fontWeight: 600, fontSize: 17, color: label || est?.label ? "#1B1D17" : "#9C9E90" }}>{label || est?.label || t("namePlaceholder")}</span>
                       <Pencil size={14} color="#9C9E90" />
                     </button>
                   )}
-                  <div style={{ fontSize: 12, color: "#9A9C8F", marginTop: 3 }}>{t("estimatedFrom")}</div>
+                  {!manual && <div style={{ fontSize: 12, color: "#9A9C8F", marginTop: 3 }}>{t("estimatedFrom")}</div>}
                 </div>
               </div>
 
-              {/* macro card */}
+              {/* editable values */}
               <div style={{ background: "#FCFAF4", border: "1px solid #E4E0D2", borderRadius: 18, padding: 20, marginTop: 12 }}>
                 <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between" }}>
                   <div>
                     {overline(t("caloriesLabel"))}
-                    <div className="g-fg" style={{ fontWeight: 700, fontSize: 40, color: "#1B1D17", letterSpacing: "-.02em", lineHeight: 1, marginTop: 6 }}>{fmt(rKcal)}</div>
+                    <input
+                      className="g-kcal-edit"
+                      inputMode="numeric"
+                      value={vals.kcal ? String(vals.kcal) : ""}
+                      placeholder="0"
+                      onChange={(e) => setVal("kcal", Math.round(Number(e.target.value.replace(/\D/g, "").slice(0, 5)) || 0))}
+                      aria-label={t("caloriesLabel")}
+                      style={{ width: `${Math.max(2, (vals.kcal ? String(vals.kcal).length : 1) + 1)}ch`, marginTop: 6 }}
+                    />
                   </div>
-                  <span style={{ background: MACRO[rDom].tint, color: PILL_TEXT[rDom], fontSize: 11.5, fontWeight: 600, padding: "6px 12px", borderRadius: 999, textTransform: "capitalize" }}>
-                    {t(mostlyKey(rP, rC, rF))}
-                  </span>
+                  {hasAnyVal && (
+                    <span style={{ background: MACRO[rDom].tint, color: PILL_TEXT[rDom], fontSize: 11.5, fontWeight: 600, padding: "6px 12px", borderRadius: 999, textTransform: "capitalize" }}>
+                      {t(mostlyKey(vals.protein, vals.carbs, vals.fat))}
+                    </span>
+                  )}
                 </div>
                 <div style={{ height: 1, background: "#EBE7D9", margin: "18px 0" }} />
-                {(["protein", "carbs", "fat"] as const).map((k) => {
-                  const val = k === "protein" ? rP : k === "carbs" ? rC : rF;
-                  return (
-                    <div key={k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0" }}>
-                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-                        <MacroShape macro={k} size={10} />
-                        <span className="g-fg" style={{ fontSize: 15, color: "#1B1D17" }}>{t(k)}</span>
-                      </div>
-                      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-                        <button className="g-step g-step-minus" onClick={() => stepMacro(k, -1)} disabled={val <= 0} aria-label="−">−</button>
-                        <span className="g-fm" style={{ fontSize: 15, color: "#1B1D17", width: 44, textAlign: "center" }}>{val} g</span>
-                        <button className="g-step g-step-plus" onClick={() => stepMacro(k, 1)} aria-label="+">+</button>
-                      </div>
+                {(["protein", "carbs", "fat"] as const).map((k) => (
+                  <div key={k} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 0" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                      <MacroShape macro={k} size={10} />
+                      <span className="g-fg" style={{ fontSize: 15, color: "#1B1D17" }}>{t(k)}</span>
                     </div>
-                  );
-                })}
+                    <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+                      <button className="g-step g-step-minus" onClick={() => stepMacro(k, -1)} disabled={vals[k] <= 0} aria-label="−">−</button>
+                      <span style={{ display: "flex", alignItems: "baseline", gap: 2, width: 50, justifyContent: "center" }}>
+                        <input
+                          className="g-fm"
+                          inputMode="numeric"
+                          value={vals[k] ? String(vals[k]) : ""}
+                          placeholder="0"
+                          onChange={(e) => setVal(k, Math.round(Number(e.target.value.replace(/\D/g, "").slice(0, 4)) || 0))}
+                          aria-label={t(k)}
+                          style={{ width: 30, border: "none", background: "none", textAlign: "right", fontSize: 15, color: "#1B1D17", outline: "none" }}
+                        />
+                        <span className="g-fm" style={{ fontSize: 12, color: "#9A9C8F" }}>g</span>
+                      </span>
+                      <button className="g-step g-step-plus" onClick={() => stepMacro(k, 1)} aria-label="+">+</button>
+                    </div>
+                  </div>
+                ))}
               </div>
 
-              {/* portion */}
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16 }}>
-                {overline(t("portion"))}
-                <div style={{ display: "flex", gap: 6 }}>
-                  {PORTIONS.map((p, i) => (
-                    <button key={p} className={`g-portion ${portion === p ? "is-on" : ""}`} onClick={() => setPortion(p)}>
-                      {PORTION_LABELS[i]}
-                    </button>
-                  ))}
+              {/* portion — only when reviewing an estimate */}
+              {!manual && (
+                <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16 }}>
+                  {overline(t("portion"))}
+                  <div style={{ display: "flex", gap: 6 }}>
+                    {PORTIONS.map((p, i) => (
+                      <button key={p} className={`g-portion ${portion === p ? "is-on" : ""}`} onClick={() => applyPortion(p)}>
+                        {PORTION_LABELS[i]}
+                      </button>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             {/* footer */}
             <div style={{ flex: "none", padding: "14px 26px 30px", background: "linear-gradient(to top,#EFECE3 70%,rgba(239,236,227,0))" }}>
-              <button className="g-btn g-btn-pri" onClick={commitReview} disabled={rKcal <= 0}>
+              <button className="g-btn g-btn-pri" onClick={commitReview} disabled={!hasAnyVal}>
                 <Check size={16} /> {t("addToTodayBtn")}
               </button>
-              <button className="g-btn g-btn-ghost" onClick={saveReviewFavourite} disabled={rKcal <= 0} style={{ marginTop: 4 }}>
+              <button className="g-btn g-btn-ghost" onClick={saveReviewFavourite} disabled={!hasAnyVal} style={{ marginTop: 4 }}>
                 {t("saveToFav")}
               </button>
             </div>
