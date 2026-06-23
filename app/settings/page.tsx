@@ -89,17 +89,6 @@ export default function SettingsPage() {
     persist({ ...settings, [field]: v });
   }
 
-  const todayType: DayType =
-    (settings.overrides[today] as DayType) ||
-    (settings.trainingDays.includes(weekdayOf(today)) ? "training" : "rest");
-  function setDayType(type: DayType) {
-    const auto: DayType = settings.trainingDays.includes(weekdayOf(today)) ? "training" : "rest";
-    const overrides = { ...settings.overrides };
-    if (type === auto) delete overrides[today];
-    else overrides[today] = type;
-    persist({ ...settings, overrides });
-  }
-
   async function onExport() {
     if (exporting) return;
     setExporting(true);
@@ -179,16 +168,9 @@ export default function SettingsPage() {
             <span style={labelFg}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#55654C" }} />{t("trainingDayRow")}</span>
             <TargetValue value={settings.target} suffix={t("xlKcal")} onChange={(r) => setNum("target", r)} />
           </div>
-          <div style={rowDiv}>
+          <div style={rowBase}>
             <span style={labelFg}><span style={{ width: 8, height: 8, borderRadius: "50%", background: "#B7B9AC" }} />{t("restDayRow")}</span>
             <TargetValue value={settings.restTarget} suffix={t("xlKcal")} onChange={(r) => setNum("restTarget", r)} />
-          </div>
-          <div style={rowBase}>
-            <span style={labelFg}>{t("todayIs")}</span>
-            <div className="g-daytype">
-              <button className={todayType === "training" ? "is-on" : ""} onClick={() => setDayType("training")}>{t("training")}</button>
-              <button className={todayType === "rest" ? "is-on" : ""} onClick={() => setDayType("rest")}>{t("rest")}</button>
-            </div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 8, margin: "10px 4px 0", fontSize: 12, color: "#9A9C8F", lineHeight: 1.45 }}>
