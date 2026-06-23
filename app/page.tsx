@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import dynamic from "next/dynamic";
 import { Camera, Check, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { DotGrid } from "@/components/DotGrid";
@@ -12,7 +12,7 @@ import { api } from "@/lib/api";
 import { downscale, type Downscaled } from "@/lib/image";
 import { dateLong, nowTime, slotKey, todayKey, weekdayLongUpper, weekdayOf } from "@/lib/date";
 import { dominantMacro, MACRO, type MacroKey } from "@/lib/macros";
-import { getHeroView, type HeroView } from "@/lib/prefs";
+import { getHeroMetric, getHeroView, type HeroMetric, type HeroView } from "@/lib/prefs";
 import type { DayType, Entry, EstimateResult, Settings, Template } from "@/lib/types";
 
 const BarcodeScanner = dynamic(() => import("@/components/BarcodeScanner"), { ssr: false });
@@ -48,21 +48,31 @@ function EditNum({ value, onChange, suffix, ariaLabel }: { value: string; onChan
   );
 }
 
-// A Today macro card: marker + name, current/target (mono), thin progress bar.
-function MacroCard({ macro, name, val, tgt }: { macro: MacroKey; name: string; val: number; tgt: number | null | undefined }) {
+type Metric = HeroMetric;
+
+// Marker for a metric: a hollow ring for calories, the macro shape otherwise.
+function metricMarker(m: Metric): ReactNode {
+  if (m === "calories") {
+    return <span style={{ width: 8, height: 8, borderRadius: "50%", border: "2px solid #55654C", boxSizing: "border-box", display: "inline-block" }} />;
+  }
+  return <MacroShape macro={m} size={8} />;
+}
+
+// A small Today metric card: marker + name, current/target (mono), progress bar.
+function MetricCard({ metric, name, val, tgt, accent }: { metric: Metric; name: string; val: number; tgt: number | null | undefined; accent: string }) {
   const pct = tgt && tgt > 0 ? Math.min(1, val / tgt) * 100 : 0;
   return (
-    <div style={{ flex: 1, background: "#FCFAF4", border: "1px solid #E8E4D6", borderRadius: 16, padding: 12 }}>
+    <div style={{ flex: 1, minWidth: 0, background: "#FCFAF4", border: "1px solid #E8E4D6", borderRadius: 16, padding: 12 }}>
       <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-        <MacroShape macro={macro} size={8} />
-        <span className="g-overline" style={{ fontSize: 10, letterSpacing: ".08em" }}>{name}</span>
+        {metricMarker(metric)}
+        <span className="g-overline" style={{ fontSize: 10, letterSpacing: ".06em", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{name}</span>
       </div>
       <div style={{ marginTop: 9 }}>
         <span className="g-fm" style={{ fontSize: 18, color: "#1B1D17" }}>{val}</span>
         <span style={{ fontSize: 11, color: "#9A9C8F" }}>{tgt ? `/${tgt}` : ""}</span>
       </div>
       <div className="g-mbar">
-        <span style={{ width: `${pct}%`, background: MACRO[macro].accent }} />
+        <span style={{ width: `${pct}%`, background: accent }} />
       </div>
     </div>
   );
@@ -90,6 +100,7 @@ export default function TodayPage() {
 
   // display preference + meal detail/edit
   const [heroView, setHeroView] = useState<HeroView>("left");
+  const [heroMetric, setHeroMetricState] = useState<HeroMetric>("calories");
   const [edit, setEdit] = useState<{ id: string; label: string; kcal: string; protein: string; carbs: string; fat: string; note: string | null } | null>(null);
 
   // review
@@ -119,6 +130,7 @@ export default function TodayPage() {
       setLoaded(true);
     })();
     setHeroView(getHeroView());
+    setHeroMetricState(getHeroMetric());
     // open the Add sheet when arriving from the bottom-nav `+` on another tab
     if (typeof window !== "undefined" && new URLSearchParams(window.location.search).get("add") === "1") {
       setSheet("add");
@@ -138,23 +150,33 @@ export default function TodayPage() {
     (settings.trainingDays.includes(weekdayOf(tKey)) ? "training" : "rest");
   const target = (todayType === "rest" ? settings.restTarget ?? settings.target : settings.target) ?? 0;
   const hasTarget = target > 0;
-  const remaining = target - eaten;
-  const over = hasTarget && eaten > target;
-
-  // Hero number: "calories left" or "calories eaten" per the saved preference.
-  const showConsumed = !hasTarget || heroView === "consumed";
-  const heroOverline = showConsumed ? (hasTarget ? t("caloriesEaten") : t("eatenLabel")) : t("calsLeft");
-  const heroBig = showConsumed ? eaten : Math.abs(remaining);
-  const heroSub = !hasTarget
-    ? t("noTargetEatenHint")
-    : showConsumed || !over
-      ? t("ofTargetKcal", { target: fmt(target) })
-      : t("kcalOverBudget");
-
   const macroTargets =
     todayType === "rest"
       ? { protein: settings.restProtein, carbs: settings.restCarbs, fat: settings.restFat }
       : { protein: settings.trainingProtein, carbs: settings.trainingCarbs, fat: settings.trainingFat };
+
+  // The four trackable metrics. One is the hero (big number + dot grid); the
+  // other three are the small cards. Which one is the hero — and whether it
+  // shows "left" or "eaten" — are saved display preferences.
+  const metricInfo: Record<Metric, { consumed: number; target: number | null; unit: string; name: string; accent: string }> = {
+    calories: { consumed: eaten, target: hasTarget ? target : null, unit: "kcal", name: t("metricCalories"), accent: "#55654C" },
+    protein: { consumed: pSum, target: macroTargets.protein ?? null, unit: "g", name: t("protein"), accent: MACRO.protein.accent },
+    carbs: { consumed: cSum, target: macroTargets.carbs ?? null, unit: "g", name: t("carbs"), accent: MACRO.carbs.accent },
+    fat: { consumed: fSum, target: macroTargets.fat ?? null, unit: "g", name: t("fat"), accent: MACRO.fat.accent },
+  };
+  const hero = metricInfo[heroMetric];
+  const heroTargetSet = hero.target != null && hero.target > 0;
+  const heroOver = heroTargetSet && hero.consumed > (hero.target as number);
+  const heroRemaining = (hero.target ?? 0) - hero.consumed;
+  const heroShowConsumed = !heroTargetSet || heroView === "consumed";
+  const heroBig = heroShowConsumed ? hero.consumed : Math.abs(heroRemaining);
+  const heroOverlineText = heroShowConsumed ? t("metricEaten", { m: hero.name }) : t("metricLeft", { m: hero.name });
+  const heroSub = !heroTargetSet
+    ? t("noTargetMetricHint", { unit: hero.unit })
+    : heroShowConsumed || !heroOver
+      ? t("ofTargetUnit", { target: fmt(hero.target as number), unit: hero.unit })
+      : t("unitOverBudget", { unit: hero.unit });
+  const otherMetrics = (["calories", "protein", "carbs", "fat"] as const).filter((m) => m !== heroMetric);
 
   // ---- mutations ----
   function persistSettings(next: Settings) {
@@ -397,31 +419,31 @@ export default function TodayPage() {
 
         {/* hero card */}
         <div style={{ margin: "18px 28px 0", background: "#FCFAF4", border: "1px solid #E8E4D6", borderRadius: 24, padding: "22px 22px 20px" }}>
-          {overline(heroOverline)}
+          {overline(heroOverlineText)}
           <div style={{ display: "flex", alignItems: "flex-end", gap: 10, marginTop: 8 }}>
-            <span className="g-fg" style={{ fontWeight: 700, fontSize: 54, lineHeight: 0.9, letterSpacing: "-.03em", color: over ? "#BC6440" : "#1B1D17" }}>
+            <span className="g-fg" style={{ fontWeight: 700, fontSize: 54, lineHeight: 0.9, letterSpacing: "-.03em", color: heroOver ? "#BC6440" : "#1B1D17" }}>
               {fmt(heroBig)}
             </span>
             <span style={{ fontSize: 14, color: "#7A7E6F", marginBottom: 6 }}>{heroSub}</span>
           </div>
-          <DotGrid consumed={eaten} target={hasTarget ? target : 0} />
+          <DotGrid consumed={hero.consumed} target={heroTargetSet ? (hero.target as number) : 0} />
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 16, fontSize: 11.5, color: "#9A9C8F" }}>
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#55654C" }} />
-              {fmt(eaten)} {t("eatenLabel")}
+              {fmt(hero.consumed)} {t("eatenLabel")}
             </span>
             <span style={{ display: "flex", alignItems: "center", gap: 6 }}>
               <span style={{ width: 9, height: 9, borderRadius: "50%", background: "#DCE0D2" }} />
-              {fmt(hasTarget && remaining > 0 ? remaining : 0)} {t("leftLabel")}
+              {fmt(heroTargetSet && heroRemaining > 0 ? heroRemaining : 0)} {t("leftLabel")}
             </span>
           </div>
         </div>
 
-        {/* macro cards */}
+        {/* the other three metrics as small cards */}
         <div style={{ display: "flex", gap: 10, margin: "14px 28px 0" }}>
-          <MacroCard macro="protein" name={t("protein")} val={pSum} tgt={macroTargets.protein} />
-          <MacroCard macro="carbs" name={t("carbs")} val={cSum} tgt={macroTargets.carbs} />
-          <MacroCard macro="fat" name={t("fat")} val={fSum} tgt={macroTargets.fat} />
+          {otherMetrics.map((m) => (
+            <MetricCard key={m} metric={m} name={metricInfo[m].name} val={metricInfo[m].consumed} tgt={metricInfo[m].target} accent={metricInfo[m].accent} />
+          ))}
         </div>
 
         {/* today list */}

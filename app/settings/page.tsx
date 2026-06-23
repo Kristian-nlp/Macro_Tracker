@@ -8,7 +8,7 @@ import { useLang } from "@/components/LangProvider";
 import { api } from "@/lib/api";
 import { addDays, todayKey, weekdayOf } from "@/lib/date";
 import { downloadExcel } from "@/lib/excel";
-import { getHeroView, saveHeroView, type HeroView } from "@/lib/prefs";
+import { getHeroMetric, getHeroView, saveHeroMetric, saveHeroView, type HeroMetric, type HeroView } from "@/lib/prefs";
 import type { DayType, Settings } from "@/lib/types";
 import type { MacroKey } from "@/lib/macros";
 
@@ -70,6 +70,7 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false);
   const [delErr, setDelErr] = useState("");
   const [heroView, setHeroViewState] = useState<HeroView>("left");
+  const [heroMetric, setHeroMetricState] = useState<HeroMetric>("calories");
 
   useEffect(() => {
     (async () => {
@@ -84,11 +85,16 @@ export default function SettingsPage() {
       setLoaded(true);
     })();
     setHeroViewState(getHeroView());
+    setHeroMetricState(getHeroMetric());
   }, []);
 
   function changeHeroView(v: HeroView) {
     setHeroViewState(v);
     saveHeroView(v);
+  }
+  function changeHeroMetric(v: HeroMetric) {
+    setHeroMetricState(v);
+    saveHeroMetric(v);
   }
 
   function persist(next: Settings) {
@@ -232,11 +238,20 @@ export default function SettingsPage() {
           ))}
         </div>
 
-        {/* display preference (Today's big number) */}
+        {/* display preference: which metric is Today's hero, shown as left/eaten */}
         <div className="g-overline" style={{ margin: "20px 2px 10px" }}>{t("displaySection")}</div>
         <div style={card}>
+          <div style={{ padding: "12px 0 14px", borderBottom: "1px solid #EBE7D9" }}>
+            <div style={{ ...labelFg, marginBottom: 10 }}>{t("topMetric")}</div>
+            <div className="g-segs">
+              <button className={heroMetric === "calories" ? "is-on" : ""} onClick={() => changeHeroMetric("calories")}>{t("metricCalories")}</button>
+              <button className={heroMetric === "protein" ? "is-on" : ""} onClick={() => changeHeroMetric("protein")}>{t("protein")}</button>
+              <button className={heroMetric === "carbs" ? "is-on" : ""} onClick={() => changeHeroMetric("carbs")}>{t("metricCarbsShort")}</button>
+              <button className={heroMetric === "fat" ? "is-on" : ""} onClick={() => changeHeroMetric("fat")}>{t("fat")}</button>
+            </div>
+          </div>
           <div style={rowBase}>
-            <span style={labelFg}>{t("todayNumber")}</span>
+            <span style={labelFg}>{t("showAs")}</span>
             <div className="g-daytype">
               <button className={heroView === "left" ? "is-on" : ""} onClick={() => changeHeroView("left")}>{t("heroLeft")}</button>
               <button className={heroView === "consumed" ? "is-on" : ""} onClick={() => changeHeroView("consumed")}>{t("heroEaten")}</button>
