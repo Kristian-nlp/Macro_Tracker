@@ -344,9 +344,6 @@ export default function TodayPage() {
               <Macro label="Carbs" val={cSum} target={macroTargets.carbs} />
               <Macro label="Fat" val={fSum} target={macroTargets.fat} />
             </div>
-            <button className="cal-hero-settings" onClick={() => setShowSettings(true)}>
-              <SettingsIcon size={13} /> Settings
-            </button>
           </div>
         </div>
       </section>

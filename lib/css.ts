@@ -48,8 +48,6 @@ html,body{margin:0; padding:0; background:#EDEFE9;}
 .cal-macros{display:flex; gap:13px;}
 .cal-hero-top{display:flex; align-items:center; justify-content:space-between; gap:8px; row-gap:8px; margin-bottom:2px; flex-wrap:wrap;}
 .cal-hero-bottom{display:flex; align-items:flex-end; justify-content:space-between; gap:10px; margin-top:auto; padding-top:16px; flex-wrap:wrap;}
-.cal-hero-settings{display:inline-flex; align-items:center; gap:5px; font-size:12px; font-weight:500; padding:6px 10px; border-radius:9px; border:1px solid var(--line-strong); background:var(--surface); color:var(--ink-soft); white-space:nowrap; cursor:pointer;}
-.cal-hero-settings:hover{border-color:var(--accent); color:var(--accent-deep);}
 .cal-switch{position:relative; flex:0 0 auto; width:148px; height:30px; border-radius:999px; border:1px solid var(--line-strong); background:var(--surface-2); padding:3px; display:flex;}
 .cal-switch-opt{position:relative; z-index:1; flex:1; display:grid; place-items:center; font-size:11px; font-weight:600; letter-spacing:0.02em; color:var(--muted); transition:color .2s ease;}
 .cal-switch-knob{position:absolute; z-index:0; top:3px; left:3px; width:calc(50% - 3px); height:calc(100% - 6px); border-radius:999px; background:var(--accent); transition:transform .22s cubic-bezier(.22,.61,.36,1);}
