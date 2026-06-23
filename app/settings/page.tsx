@@ -24,7 +24,15 @@ const DEFAULT_SETTINGS: Settings = {
   overrides: {},
 };
 
-type NumField = "target" | "restTarget" | "trainingProtein" | "trainingCarbs" | "trainingFat";
+type NumField =
+  | "target"
+  | "restTarget"
+  | "trainingProtein"
+  | "trainingCarbs"
+  | "trainingFat"
+  | "restProtein"
+  | "restCarbs"
+  | "restFat";
 
 // Right-aligned, borderless numeric value that is tappable to edit. Module-level
 // so it stays mounted across keystrokes (an inner component would remount and
@@ -56,6 +64,7 @@ export default function SettingsPage() {
   const [username, setUsername] = useState("");
   const [favCount, setFavCount] = useState(0);
   const [exporting, setExporting] = useState(false);
+  const [macroDay, setMacroDay] = useState<DayType>("training"); // which set the macro targets edit
 
   useEffect(() => {
     (async () => {
@@ -134,11 +143,18 @@ export default function SettingsPage() {
     );
   }
 
-  const macroRows: { key: MacroKey; field: "trainingProtein" | "trainingCarbs" | "trainingFat" }[] = [
-    { key: "protein", field: "trainingProtein" },
-    { key: "carbs", field: "trainingCarbs" },
-    { key: "fat", field: "trainingFat" },
-  ];
+  const macroRows: { key: MacroKey; field: NumField }[] =
+    macroDay === "rest"
+      ? [
+          { key: "protein", field: "restProtein" },
+          { key: "carbs", field: "restCarbs" },
+          { key: "fat", field: "restFat" },
+        ]
+      : [
+          { key: "protein", field: "trainingProtein" },
+          { key: "carbs", field: "trainingCarbs" },
+          { key: "fat", field: "trainingFat" },
+        ];
 
   return (
     <div className="g-screen">
@@ -182,8 +198,14 @@ export default function SettingsPage() {
           {t("targetsRefill")}
         </div>
 
-        {/* macro targets */}
-        <div className="g-overline" style={{ margin: "20px 2px 10px" }}>{t("macroTargets")}</div>
+        {/* macro targets — per training / rest day */}
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "20px 2px 10px" }}>
+          <span className="g-overline">{t("macroTargets")}</span>
+          <div className="g-daytype">
+            <button className={macroDay === "training" ? "is-on" : ""} onClick={() => setMacroDay("training")}>{t("training")}</button>
+            <button className={macroDay === "rest" ? "is-on" : ""} onClick={() => setMacroDay("rest")}>{t("rest")}</button>
+          </div>
+        </div>
         <div style={card}>
           {macroRows.map((m, i) => (
             <div key={m.key} style={i < macroRows.length - 1 ? rowDiv : rowBase}>

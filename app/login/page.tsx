@@ -96,7 +96,7 @@ export default function LoginPage() {
           autoCapitalize="none"
           autoCorrect="off"
           spellCheck={false}
-          placeholder="kristian"
+          placeholder={t("username").toLowerCase()}
         />
 
         <div style={{ ...overline, margin: "16px 0 8px" }}>{t("pinOverline")}</div>

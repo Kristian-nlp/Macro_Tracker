@@ -63,7 +63,6 @@ export default function TodayPage() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [todays, setTodays] = useState<Entry[]>([]);
   const [templates, setTemplates] = useState<Template[]>([]);
-  const [username, setUsername] = useState("");
 
   // logging flow
   const [sheet, setSheet] = useState<null | "add" | "review">(null);
@@ -88,13 +87,12 @@ export default function TodayPage() {
   useEffect(() => {
     (async () => {
       try {
-        const [me, s, e, tpl] = await Promise.all([
-          api.getMe(),
+        const [, s, e, tpl] = await Promise.all([
+          api.getMe(), // auth guard: 401 here redirects to /login
           api.getSettings(),
           api.getEntriesForDate(tKey),
           api.getTemplates(),
         ]);
-        setUsername(me.username);
         setSettings(s);
         setTodays(e);
         setTemplates(tpl);
@@ -311,35 +309,16 @@ export default function TodayPage() {
     <div className="g-screen">
       <div className="g-scroll" style={{ paddingBottom: 156 }}>
         {/* header */}
-        <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", padding: "12px 28px 0" }}>
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "12px 28px 0" }}>
           <div>
             {overline(weekdayLongUpper(tKey, lang))}
             <div className="g-fg" style={{ fontWeight: 700, fontSize: 23, color: "#1B1D17", letterSpacing: "-.01em", marginTop: 2 }}>
               {dateLong(tKey, lang)}
             </div>
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-            <button
-              onClick={() => setDayType(todayType === "training" ? "rest" : "training")}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 6,
-                background: "#E7EADF",
-                color: "#41503A",
-                fontSize: 12,
-                fontWeight: 600,
-                padding: "6px 11px",
-                borderRadius: 999,
-                border: "none",
-              }}
-            >
-              <span style={{ width: 7, height: 7, borderRadius: "50%", background: todayType === "training" ? "#55654C" : "#B7B9AC" }} />
-              {todayType === "training" ? t("training") : t("rest")}
-            </button>
-            <div className="g-fg" style={{ width: 38, height: 38, borderRadius: "50%", background: "#55654C", display: "grid", placeItems: "center", color: "#fff", fontWeight: 600, fontSize: 15 }}>
-              {(username[0] || "?").toUpperCase()}
-            </div>
+          <div className="g-daytype" role="group" aria-label={`${t("training")} / ${t("rest")}`}>
+            <button className={todayType === "training" ? "is-on" : ""} onClick={() => setDayType("training")}>{t("training")}</button>
+            <button className={todayType === "rest" ? "is-on" : ""} onClick={() => setDayType("rest")}>{t("rest")}</button>
           </div>
         </div>
 
