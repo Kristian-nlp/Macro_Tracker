@@ -7,6 +7,7 @@ import { BottomNav } from "@/components/BottomNav";
 import { useLang } from "@/components/LangProvider";
 import { api } from "@/lib/api";
 import { addDays, todayKey, weekdayOf } from "@/lib/date";
+import { DAYS_SHORT } from "@/lib/i18n";
 import { downloadExcel } from "@/lib/excel";
 import { getHeroMetric, getHeroView, saveHeroMetric, saveHeroView, type HeroMetric, type HeroView } from "@/lib/prefs";
 import type { DayType, Settings } from "@/lib/types";
@@ -104,6 +105,12 @@ export default function SettingsPage() {
   function setNum(field: NumField, raw: string) {
     const v = raw === "" ? null : Math.max(0, Math.round(Number(raw) || 0));
     persist({ ...settings, [field]: v });
+  }
+  function toggleTrainingDay(d: number) {
+    const set = settings.trainingDays.includes(d)
+      ? settings.trainingDays.filter((x) => x !== d)
+      : [...settings.trainingDays, d];
+    persist({ ...settings, trainingDays: set });
   }
 
   async function onExport() {
@@ -219,6 +226,27 @@ export default function SettingsPage() {
           >
             {t("calculateIt")}
           </a>
+        </div>
+
+        {/* training-day schedule (auto day type per weekday) */}
+        <div className="g-overline" style={{ margin: "20px 2px 10px" }}>{t("trainingDays")}</div>
+        <div className="g-weekdays">
+          {[1, 2, 3, 4, 5, 6, 0].map((d) => (
+            <button
+              key={d}
+              className={`g-weekday ${settings.trainingDays.includes(d) ? "on" : ""}`}
+              onClick={() => toggleTrainingDay(d)}
+              aria-pressed={settings.trainingDays.includes(d)}
+            >
+              {DAYS_SHORT[lang][d].slice(0, 2)}
+            </button>
+          ))}
+        </div>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, margin: "10px 4px 0", fontSize: 12, color: "#9A9C8F", lineHeight: 1.45 }}>
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A8A99B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none", marginTop: 1 }}>
+            <circle cx="12" cy="12" r="9" /><path d="M12 8h.01M11 12h1v4h1" />
+          </svg>
+          {t("trainingDaysHint")}
         </div>
 
         {/* macro targets — per training / rest day */}

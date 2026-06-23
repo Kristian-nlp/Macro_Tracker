@@ -130,6 +130,9 @@ textarea.g-input{resize:none; font-family:var(--fg);}
 .g-segs{display:flex; gap:6px;}
 .g-segs button{flex:1; padding:8px 4px; border:1px solid var(--border-input); background:var(--surface); border-radius:10px; font-family:var(--fg); font-weight:600; font-size:12.5px; color:var(--muted); transition:background .15s ease, color .15s ease, border-color .15s ease;}
 .g-segs button.is-on{background:var(--sage); color:var(--paper); border-color:var(--sage);}
+.g-weekdays{display:flex; gap:6px;}
+.g-weekday{flex:1; height:42px; border-radius:11px; border:1px solid var(--border-input); background:var(--surface); color:var(--muted); font-family:var(--fg); font-weight:600; font-size:13px; transition:background .15s ease, color .15s ease, border-color .15s ease;}
+.g-weekday.on{background:var(--sage); border-color:var(--sage); color:var(--paper);}
 .g-daytype{display:flex; background:#EDEADF; border-radius:10px; padding:3px;}
 .g-daytype button{font-family:var(--fg); font-size:13px; font-weight:600; color:#7A7E6F; padding:6px 14px; border:none; background:none; border-radius:8px;}
 .g-daytype button.is-on{color:var(--paper); background:var(--sage);}
