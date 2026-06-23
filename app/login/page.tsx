@@ -161,6 +161,18 @@ export default function LoginPage() {
           <div style={{ ...overline, margin: "16px 0 8px" }}>{t("restDayRow")}</div>
           {kcalField(restKcal, setRestKcal, t("restDayRow"), "2200")}
 
+          <div style={{ marginTop: 12, fontSize: 13, color: "#6B6E60" }}>
+            {t("dontKnowTarget")}{" "}
+            <a
+              href="https://www.calculator.net/calorie-calculator.html"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{ color: "#55654C", fontWeight: 600, textDecoration: "underline" }}
+            >
+              {t("calculateIt")}
+            </a>
+          </div>
+
           <button className="g-btn g-btn-pri" type="submit" disabled={busy} style={{ marginTop: 24 }}>
             {busy ? (
               <>

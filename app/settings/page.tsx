@@ -195,6 +195,17 @@ export default function SettingsPage() {
           </svg>
           {t("targetsRefill")}
         </div>
+        <div style={{ margin: "8px 4px 0", fontSize: 12, color: "#9A9C8F", lineHeight: 1.45 }}>
+          {t("dontKnowTarget")}{" "}
+          <a
+            href="https://www.calculator.net/calorie-calculator.html"
+            target="_blank"
+            rel="noopener noreferrer"
+            style={{ color: "#55654C", fontWeight: 600, textDecoration: "underline" }}
+          >
+            {t("calculateIt")}
+          </a>
+        </div>
 
         {/* macro targets — per training / rest day */}
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", margin: "20px 2px 10px" }}>
