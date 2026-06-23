@@ -163,7 +163,7 @@ export default function SettingsPage() {
 
   return (
     <div className="g-screen">
-      <div className="g-scroll" style={{ padding: "0 26px" }}>
+      <div className="g-scroll" style={{ padding: "0 26px 124px" }}>
         <div className="g-fg" style={{ fontWeight: 700, fontSize: 26, color: "#1B1D17", letterSpacing: "-.02em", padding: "12px 0 0" }}>{t("settingsTitle")}</div>
 
         {/* profile */}
