@@ -20,7 +20,7 @@ export async function GET(_req: Request, { params }: { params: { barcode: string
   try {
     const url =
       `https://world.openfoodfacts.org/api/v2/product/${code}.json` +
-      `?fields=product_name,brands,nutriments,serving_quantity`;
+      `?fields=product_name,brands,nutriments,serving_quantity,product_quantity`;
     const res = await fetch(url, {
       headers: { "User-Agent": "MacroTracker/1.0 (personal calorie tracker)" },
       cache: "no-store",
@@ -50,12 +50,14 @@ export async function GET(_req: Request, { params }: { params: { barcode: string
     const name =
       [p.product_name, p.brands].filter(Boolean).join(" · ").slice(0, 80) || "Scanned product";
     const serving = num(p.serving_quantity);
+    const pkg = num(p.product_quantity); // net weight of the whole product, grams
 
     return NextResponse.json({
       found: true,
       name,
       per100g,
       servingGrams: serving && serving > 0 ? Math.round(serving) : null,
+      packageGrams: pkg && pkg > 0 ? Math.round(pkg) : null,
     });
   } catch {
     return NextResponse.json({ found: false }, { status: 502 });

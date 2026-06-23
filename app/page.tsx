@@ -111,6 +111,9 @@ export default function TodayPage() {
   const [manual, setManual] = useState(false);
   const [portion, setPortion] = useState(1);
   const [vals, setVals] = useState({ kcal: 0, protein: 0, carbs: 0, fat: 0 });
+  // scanned-product context: lets you choose serving / whole package / custom grams
+  const [scan, setScan] = useState<{ name: string; per100g: Macros; servingGrams: number | null; packageGrams: number | null } | null>(null);
+  const [scanGrams, setScanGrams] = useState(0);
 
   const tKey = todayKey();
 
@@ -299,25 +302,30 @@ export default function TodayPage() {
         setEstErr(t("errBarcodeNotFound"));
         return;
       }
-      const grams: number = data.servingGrams ?? 100;
       const per100g: Macros = data.per100g;
-      const f = grams / 100;
-      openReview({
-        label: data.name,
-        kcal: Math.round(per100g.kcal * f),
-        protein: Math.round(per100g.protein * f),
-        carbs: Math.round(per100g.carbs * f),
-        fat: Math.round(per100g.fat * f),
-        note: `${grams} g · ${data.name}`,
-      });
+      const servingGrams: number | null = data.servingGrams ?? null;
+      const packageGrams: number | null = data.packageGrams ?? null;
+      // Default to one serving, else 100 g; the sheet offers "whole pack" too.
+      openScan({ name: data.name, per100g, servingGrams, packageGrams }, servingGrams ?? 100);
     } catch {
       if (sheet !== "add") setSheet("add"); // make the error visible
       setEstErr(t("errBarcodeLookup"));
     }
   }
 
+  const scaleMacros = (per100g: Macros, grams: number): { kcal: number; protein: number; carbs: number; fat: number } => {
+    const f = grams / 100;
+    return {
+      kcal: Math.round(per100g.kcal * f),
+      protein: Math.round(per100g.protein * f),
+      carbs: Math.round(per100g.carbs * f),
+      fat: Math.round(per100g.fat * f),
+    };
+  };
+
   function openReview(r: EstimateResult) {
     setEst(r);
+    setScan(null);
     setLabel(r.label);
     setManual(false);
     setPortion(1);
@@ -326,9 +334,28 @@ export default function TodayPage() {
     setSheet("review");
   }
 
+  function openScan(s: { name: string; per100g: Macros; servingGrams: number | null; packageGrams: number | null }, grams: number) {
+    setEst(null);
+    setManual(false);
+    setScan(s);
+    setScanGrams(grams);
+    setLabel(s.name);
+    setVals(scaleMacros(s.per100g, grams));
+    setEditingName(false);
+    setSheet("review");
+  }
+
+  // Pick an amount (grams) for a scanned product and rescale its macros.
+  function setScanAmount(g: number) {
+    if (!scan) return;
+    setScanGrams(g);
+    setVals(scaleMacros(scan.per100g, g));
+  }
+
   // Log a meal by hand — no estimate. Every field is optional.
   function openManual() {
     setEst(null);
+    setScan(null);
     setLabel("");
     setManual(true);
     setPortion(1);
@@ -367,7 +394,7 @@ export default function TodayPage() {
       protein: vals.protein,
       carbs: vals.carbs,
       fat: vals.fat,
-      note: est?.note || "",
+      note: scan ? `${scanGrams} g` : est?.note || "",
     });
     resetFlow();
   }
@@ -398,6 +425,8 @@ export default function TodayPage() {
     setDesc("");
     setImg(null);
     setEst(null);
+    setScan(null);
+    setScanGrams(0);
     setLabel("");
     setEstErr("");
     setEditingName(false);
@@ -656,7 +685,7 @@ export default function TodayPage() {
           <div className="g-sheet" onClick={(e) => e.stopPropagation()}>
             <div className="g-sheet-grab"><span /></div>
             <div className="g-sheet-head">
-              <span className="g-sheet-title">{manual ? t("addMeal") : t("reviewTitle")}</span>
+              <span className="g-sheet-title">{manual || scan ? t("addMeal") : t("reviewTitle")}</span>
               <button className="g-sheet-x" onClick={resetFlow} aria-label="×"><X size={16} /></button>
             </div>
             <div className="g-sheet-body">
@@ -683,7 +712,7 @@ export default function TodayPage() {
                       <Pencil size={14} color="#9C9E90" />
                     </button>
                   )}
-                  {!manual && <div style={{ fontSize: 12, color: "#9A9C8F", marginTop: 3 }}>{t("estimatedFrom")}</div>}
+                  {!manual && !scan && <div style={{ fontSize: 12, color: "#9A9C8F", marginTop: 3 }}>{t("estimatedFrom")}</div>}
                 </div>
               </div>
 
@@ -735,8 +764,42 @@ export default function TodayPage() {
                 ))}
               </div>
 
-              {/* portion — only when reviewing an estimate */}
-              {!manual && (
+              {/* amount — scanned products: serving / whole pack / custom grams */}
+              {scan && (
+                <div style={{ marginTop: 16 }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between" }}>
+                    {overline(t("amount"))}
+                    <span style={{ display: "flex", alignItems: "center", gap: 5 }}>
+                      <input
+                        className="g-fm"
+                        inputMode="numeric"
+                        value={scanGrams ? String(scanGrams) : ""}
+                        placeholder="0"
+                        onChange={(e) => setScanAmount(Number(e.target.value.replace(/\D/g, "").slice(0, 5)) || 0)}
+                        aria-label={t("amount")}
+                        style={{ width: 56, border: "1px solid #E0DCCE", borderRadius: 10, padding: "6px 8px", textAlign: "right", background: "#F4F1E8", outline: "none", fontSize: 14, color: "#1B1D17" }}
+                      />
+                      <span style={{ color: "#9A9C8F", fontSize: 12 }}>g</span>
+                    </span>
+                  </div>
+                  <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+                    {scan.servingGrams ? (
+                      <button className={`g-portion ${scanGrams === scan.servingGrams ? "is-on" : ""}`} onClick={() => setScanAmount(scan.servingGrams as number)}>
+                        {t("serving")} · {scan.servingGrams} g
+                      </button>
+                    ) : null}
+                    {scan.packageGrams ? (
+                      <button className={`g-portion ${scanGrams === scan.packageGrams ? "is-on" : ""}`} onClick={() => setScanAmount(scan.packageGrams as number)}>
+                        {t("wholePackage")} · {scan.packageGrams} g
+                      </button>
+                    ) : null}
+                    <button className={`g-portion ${scanGrams === 100 ? "is-on" : ""}`} onClick={() => setScanAmount(100)}>100 g</button>
+                  </div>
+                </div>
+              )}
+
+              {/* portion — only when reviewing an AI estimate */}
+              {!manual && !scan && (
                 <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginTop: 16 }}>
                   {overline(t("portion"))}
                   <div style={{ display: "flex", gap: 6 }}>
