@@ -90,7 +90,8 @@ textarea.g-input{resize:none; font-family:var(--fg);}
 
 /* ---- sheets (Add a meal / Review estimate) ---- */
 .g-sheet-bg{position:fixed; inset:0; background:rgba(24,26,20,.42); backdrop-filter:blur(2px); display:flex; align-items:flex-end; justify-content:center; z-index:50;}
-.g-sheet{background:var(--sheet); width:100%; max-width:430px; border-radius:28px 28px 0 0; max-height:92dvh; display:flex; flex-direction:column; overflow:hidden; animation:g-rise .26s cubic-bezier(.22,.61,.36,1);}
+.g-sheet{position:relative; background:var(--sheet); width:100%; max-width:430px; border-radius:28px 28px 0 0; max-height:92dvh; display:flex; flex-direction:column; overflow:hidden; animation:g-rise .26s cubic-bezier(.22,.61,.36,1);}
+.g-sheet-loading{position:absolute; inset:0; z-index:5; background:rgba(239,236,227,.86); backdrop-filter:blur(1.5px); display:flex; flex-direction:column; align-items:center; justify-content:center; gap:14px;}
 @keyframes g-rise{from{transform:translateY(100%);} to{transform:translateY(0);}}
 .g-sheet-grab{flex:none; display:flex; justify-content:center; padding-top:10px;}
 .g-sheet-grab span{width:40px; height:5px; border-radius:3px; background:#CFCBBC;}

@@ -416,6 +416,12 @@ export default function TodayPage() {
       {sheet === "add" && (
         <div className="g-sheet-bg" onClick={resetFlow}>
           <div className="g-sheet" onClick={(e) => e.stopPropagation()}>
+            {estimating && (
+              <div className="g-sheet-loading">
+                <Loader2 size={32} className="g-spin" color="#55654C" />
+                <span className="g-fg" style={{ fontSize: 15, fontWeight: 600, color: "#55654C" }}>{t("estimating")}…</span>
+              </div>
+            )}
             <div className="g-sheet-grab"><span /></div>
             <div className="g-sheet-head">
               <span className="g-sheet-title">{t("addMeal")}</span>
