@@ -120,6 +120,10 @@ html,body{margin:0; padding:0; background:#EDEFE9;}
 .cal-segb{flex:1; padding:9px; border-radius:9px; border:1px solid var(--line-strong); background:var(--surface); color:var(--muted); font-size:13px; text-transform:capitalize;}
 .cal-segb.on{background:var(--accent-soft); border-color:var(--accent); color:var(--accent-deep); font-weight:600;}
 
+.cal-daytoggle{display:flex; gap:6px; margin-bottom:12px;}
+.cal-dtb{flex:1; padding:11px; border-radius:10px; border:1px solid var(--line-strong); background:var(--surface); color:var(--muted); font-size:14px; font-weight:500;}
+.cal-dtb.on{background:var(--accent); border-color:var(--accent); color:#F7F8F3;}
+
 .cal-hlist{list-style:none; margin:0; padding:0;}
 .cal-hrow{padding:11px 0; border-bottom:1px solid var(--line);}
 .cal-hrow:last-child{border-bottom:none;}

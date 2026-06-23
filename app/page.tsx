@@ -211,9 +211,13 @@ export default function TodayPage() {
     }
   }
 
-  function setTodayType(type: "auto" | DayType) {
+  function setDayType(type: DayType) {
+    // Follow the Training Days schedule unless the chosen type differs from it,
+    // in which case store a per-day override. Picking the type that matches the
+    // schedule clears any override (back to "follows Training Days").
+    const auto: DayType = settings.trainingDays.includes(weekdayOf(tKey)) ? "training" : "rest";
     const overrides = { ...settings.overrides };
-    if (type === "auto") delete overrides[tKey];
+    if (type === auto) delete overrides[tKey];
     else overrides[tKey] = type;
     persistSettings({ ...settings, overrides });
   }
@@ -263,6 +267,20 @@ export default function TodayPage() {
           </button>
         </div>
       </header>
+
+      {/* day-type toggle */}
+      <div className="cal-daytoggle" role="group" aria-label="Day type">
+        {(["training", "rest"] as const).map((t) => (
+          <button
+            key={t}
+            className={`cal-dtb ${todayType === t ? "on" : ""}`}
+            onClick={() => setDayType(t)}
+            aria-pressed={todayType === t}
+          >
+            {t === "training" ? "Training day" : "Rest day"}
+          </button>
+        ))}
+      </div>
 
       {/* hero */}
       <section className="cal-card cal-hero">
@@ -482,20 +500,6 @@ export default function TodayPage() {
                 {DAYS_SHORT[d][0]}
               </button>
             ))}
-          </div>
-
-          <div className="cal-eyebrow" style={{ margin: "18px 0 8px" }}>
-            Today is a
-          </div>
-          <div className="cal-seg">
-            {(["auto", "training", "rest"] as const).map((t) => {
-              const active = t === "auto" ? !settings.overrides[tKey] : settings.overrides[tKey] === t;
-              return (
-                <button key={t} className={`cal-segb ${active ? "on" : ""}`} onClick={() => setTodayType(t)}>
-                  {t}
-                </button>
-              );
-            })}
           </div>
 
           {templates.length > 0 && (
