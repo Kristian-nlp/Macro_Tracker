@@ -17,7 +17,9 @@ export default function LoginPage() {
   const [show, setShow] = useState(false);
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState("");
+  const [pinFocused, setPinFocused] = useState(false);
   const userRef = useRef<HTMLInputElement>(null);
+  const pinRef = useRef<HTMLInputElement>(null);
 
   async function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -99,28 +101,53 @@ export default function LoginPage() {
           placeholder={t("username").toLowerCase()}
         />
 
-        <div style={{ ...overline, margin: "16px 0 8px" }}>{t("pinOverline")}</div>
-        <div style={{ ...field, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, padding: "4px 8px 4px 14px" }}>
-          <input
-            value={pin}
-            onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
-            inputMode="numeric"
-            maxLength={4}
-            autoComplete="off"
-            type={show ? "text" : "password"}
-            placeholder="••••"
-            style={{
-              flex: 1,
-              minWidth: 0,
-              border: "none",
-              background: "none",
-              outline: "none",
-              fontSize: 15,
-              color: "#1B1D17",
-              letterSpacing: show ? "normal" : ".3em",
-              padding: "10px 0",
-            }}
-          />
+        <div style={{ ...overline, margin: "16px 0 8px" }}>{t("pin")}</div>
+        <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          {/* Four cells make the 4-digit requirement unmistakable. A single
+              transparent input behind them captures the keystrokes. */}
+          <div
+            style={{ position: "relative", flex: 1, display: "flex", gap: 8 }}
+            onClick={() => pinRef.current?.focus()}
+          >
+            <input
+              ref={pinRef}
+              value={pin}
+              onChange={(e) => setPin(e.target.value.replace(/\D/g, "").slice(0, 4))}
+              onFocus={() => setPinFocused(true)}
+              onBlur={() => setPinFocused(false)}
+              inputMode="numeric"
+              maxLength={4}
+              autoComplete="off"
+              aria-label={t("pin")}
+              style={{ position: "absolute", inset: 0, width: "100%", opacity: 0, cursor: "pointer", border: "none", background: "transparent" }}
+            />
+            {[0, 1, 2, 3].map((i) => {
+              const filled = pin.length > i;
+              const active = pinFocused && i === pin.length;
+              return (
+                <div
+                  key={i}
+                  style={{
+                    flex: 1,
+                    height: 52,
+                    borderRadius: 14,
+                    background: "#FCFAF4",
+                    border: `1px solid ${active ? "#55654C" : "#E0DCCE"}`,
+                    boxShadow: active ? "0 0 0 1px #55654C" : "none",
+                    display: "grid",
+                    placeItems: "center",
+                  }}
+                >
+                  {filled &&
+                    (show ? (
+                      <span className="g-fg" style={{ fontSize: 20, color: "#1B1D17" }}>{pin[i]}</span>
+                    ) : (
+                      <span style={{ width: 10, height: 10, borderRadius: "50%", background: "#1B1D17" }} />
+                    ))}
+                </div>
+              );
+            })}
+          </div>
           <button type="button" className="g-eye" onClick={() => setShow((s) => !s)} aria-label={show ? "Hide PIN" : "Show PIN"}>
             {show ? <EyeOff size={20} /> : <Eye size={20} />}
           </button>
