@@ -7,21 +7,21 @@ export function Macro({
   label,
   val,
   target,
+  unit = "g",
 }: {
   label: string;
   val: number;
   target?: number | null;
+  unit?: string;
 }) {
   return (
     <div className="cal-macro">
       <div className="cal-macro-v">
         {val}
-        <span className="cal-macro-u">g</span>
+        {target != null ? <span className="cal-macro-t">/{target}</span> : null}
+        <span className="cal-macro-u">{unit}</span>
       </div>
-      <div className="cal-macro-l">
-        {label}
-        {target ? ` · ${target}` : ""}
-      </div>
+      <div className="cal-macro-l">{label}</div>
     </div>
   );
 }

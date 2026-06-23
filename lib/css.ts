@@ -54,17 +54,8 @@ html,body{margin:0; padding:0; background:#EDEFE9;}
 .cal-switch.is-training .cal-switch-knob{transform:translateX(100%);}
 .cal-switch.is-rest .cal-switch-opt.rest{color:#F7F8F3;}
 .cal-switch.is-training .cal-switch-opt.training{color:#F7F8F3;}
-
-.cal-mgrid{display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:16px;}
-.cal-mcell{display:flex; flex-direction:column; align-items:center; gap:5px;}
-.cal-mcell .cal-vessel{width:100%; max-width:48px; height:auto;}
-.cal-mreached{font-family:var(--fm); font-size:18px; font-weight:600; letter-spacing:-0.02em; color:var(--ink); line-height:1; margin-top:3px;}
-.cal-mreached.cal-over{color:var(--over);}
-.cal-mtarget{font-family:var(--fm); font-size:12px; color:var(--muted); line-height:1;}
-.cal-mlabel{font-size:9.5px; text-transform:uppercase; letter-spacing:0.05em; color:var(--muted);}
-.cal-mhint{display:block; width:100%; margin-top:14px; padding:0; background:none; border:none; font-size:12px; color:var(--muted); text-align:center; cursor:pointer;}
-.cal-mhint:hover{color:var(--accent-deep);}
 .cal-macro-v{font-family:var(--fm); font-size:17px; font-weight:500; letter-spacing:-0.02em;}
+.cal-macro-t{font-size:12px; color:var(--muted); font-weight:400; letter-spacing:0;}
 .cal-macro-u{font-size:11px; color:var(--muted); margin-left:1px;}
 .cal-macro-l{font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin-top:2px;}
 

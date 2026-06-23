@@ -17,7 +17,7 @@ import {
   X,
 } from "lucide-react";
 import { Vessel } from "@/components/Vessel";
-import { Field, Modal } from "@/components/ui";
+import { Field, Macro, Modal } from "@/components/ui";
 import { api } from "@/lib/api";
 import { downscale, type Downscaled } from "@/lib/image";
 import { DAYS_SHORT, dayLabel, nowTime, todayKey, weekdayOf } from "@/lib/date";
@@ -121,6 +121,9 @@ export default function TodayPage() {
     type === "rest" ? settings.restTarget ?? settings.target : settings.target;
   const target = targetFor(todayType);
   const hasTarget = target != null && target > 0;
+  const remaining = hasTarget ? (target as number) - eaten : null;
+  const ratio = hasTarget ? eaten / (target as number) : 0;
+  const over = hasTarget && eaten > (target as number) ? (eaten - (target as number)) / (target as number) : 0;
 
   // Active macro targets follow the day type.
   const macroTargets =
@@ -364,51 +367,48 @@ export default function TodayPage() {
       </header>
 
       {/* hero */}
-      <section className="cal-card">
-        <div className="cal-hero-top">
-          <div className="cal-eyebrow">{dayLabel(tKey)}</div>
-          <button
-            className={`cal-switch ${todayType === "training" ? "is-training" : "is-rest"}`}
-            onClick={() => setDayType(todayType === "training" ? "rest" : "training")}
-            role="switch"
-            aria-checked={todayType === "training"}
-            aria-label="Training or rest day"
-          >
-            <span className="cal-switch-opt rest">Rest</span>
-            <span className="cal-switch-opt training">Training</span>
-            <span className="cal-switch-knob" />
-          </button>
-        </div>
+      <section className="cal-card cal-hero">
+        <Vessel ratio={ratio} over={over} />
+        <div className="cal-hero-r">
+          <div className="cal-hero-top">
+            <div className="cal-eyebrow">{dayLabel(tKey)}</div>
+            <button
+              className={`cal-switch ${todayType === "training" ? "is-training" : "is-rest"}`}
+              onClick={() => setDayType(todayType === "training" ? "rest" : "training")}
+              role="switch"
+              aria-checked={todayType === "training"}
+              aria-label="Training or rest day"
+            >
+              <span className="cal-switch-opt rest">Rest</span>
+              <span className="cal-switch-opt training">Training</span>
+              <span className="cal-switch-knob" />
+            </button>
+          </div>
 
-        <div className="cal-mgrid">
-          {(
-            [
-              { label: "kcal", reached: eaten, target },
-              { label: "protein", reached: pSum, target: macroTargets.protein },
-              { label: "carbs", reached: cSum, target: macroTargets.carbs },
-              { label: "fat", reached: fSum, target: macroTargets.fat },
-            ] as const
-          ).map((c) => {
-            const hasT = c.target != null && c.target > 0;
-            const tgt = c.target as number;
-            const r = hasT ? c.reached / tgt : 0;
-            const o = hasT && c.reached > tgt ? (c.reached - tgt) / tgt : 0;
-            return (
-              <div className="cal-mcell" key={c.label}>
-                <Vessel ratio={r} over={o} width={46} height={88} ticks={false} />
-                <div className={`cal-mreached ${o > 0 ? "cal-over" : ""}`}>{c.reached}</div>
-                <div className="cal-mtarget">{hasT ? c.target : "–"}</div>
-                <div className="cal-mlabel">{c.label}</div>
+          {hasTarget && remaining != null ? (
+            <>
+              <div className={`cal-big ${remaining < 0 ? "cal-over" : ""}`}>{Math.abs(remaining)}</div>
+              <div className="cal-big-sub">{remaining < 0 ? "kcal over target" : "kcal left"}</div>
+              <div className="cal-meter">
+                <span>{eaten}</span>
+                <span className="cal-dim"> of {target} eaten</span>
               </div>
-            );
-          })}
-        </div>
+            </>
+          ) : (
+            <>
+              <div className="cal-big">{eaten}</div>
+              <div className="cal-big-sub">kcal eaten · set a target in settings</div>
+            </>
+          )}
 
-        {!hasTarget && (
-          <button className="cal-mhint" onClick={() => setShowSettings(true)}>
-            Tap to set your targets in settings
-          </button>
-        )}
+          <div className="cal-hero-bottom">
+            <div className="cal-macros">
+              <Macro label="Protein" val={pSum} target={macroTargets.protein} />
+              <Macro label="Carbs" val={cSum} target={macroTargets.carbs} />
+              <Macro label="Fat" val={fSum} target={macroTargets.fat} />
+            </div>
+          </div>
+        </div>
       </section>
 
       {/* quick add */}
