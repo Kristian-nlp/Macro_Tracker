@@ -18,6 +18,8 @@ the artifact, as required:
 - **`openai`** SDK for the server-side estimate (default model `gpt-4o-mini`,
   override with `OPENAI_MODEL`)
 - **SheetJS (`xlsx`)** for the client-side Excel export
+- **Open Food Facts** (free, no key) for barcode product lookups; **ZXing**
+  (`@zxing/browser`) for in-browser camera scanning
 - **lucide-react** icons; scoped CSS from the artifact (no Tailwind)
 
 ## Hard constraints honoured
@@ -37,6 +39,7 @@ the artifact, as required:
 | Method | Route | Purpose |
 | --- | --- | --- |
 | POST | `/api/estimate` | `{ imageBase64?, mediaType?, text }` → `{ label, kcal, protein, carbs, fat, note }` (server-side OpenAI, rate limited) |
+| GET | `/api/product/:barcode` | look up a scanned barcode in Open Food Facts → `{ found, name, per100g, servingGrams }` |
 | GET | `/api/entries?date=YYYY-MM-DD` / `?from=&to=` | entries for a day / range |
 | POST | `/api/entries` | add an entry |
 | DELETE | `/api/entries/:id` | delete an entry |
@@ -48,8 +51,9 @@ the artifact, as required:
 
 - **`/`** — Today: the vessel hero (kcal remaining, eaten-of-target, macro
   readouts), training-vs-rest-day logic with a per-day override, the add-a-meal
-  flow (text + photo + Estimate, then editable fields before logging),
-  favourites chips, today's list with delete, and the Settings drawer.
+  flow (text + photo + Estimate, **barcode scan** → Open Food Facts lookup with
+  an amount-in-grams field, then editable fields before logging), favourites
+  chips, today's list with delete, and the Settings drawer.
 - **`/history`** — past days with totals, target, remaining/over, a per-day bar,
   a date-range selector + presets, per-day averages for kcal and protein, and
   the **Download Excel** button.

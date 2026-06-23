@@ -137,6 +137,21 @@ html,body{margin:0; padding:0; background:#EDEFE9;}
 .cal-hbar{height:6px; border-radius:99px; background:var(--surface-2); overflow:hidden;}
 .cal-hbar span{display:block; height:100%; border-radius:99px; transition:width .4s ease;}
 
+.cal-scanned{display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:9px; padding:10px 12px; border:1px solid var(--accent); background:var(--accent-soft); border-radius:10px;}
+.cal-scanned-name{font-size:13.5px; color:var(--ink); font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+.cal-scanned-amt{display:flex; align-items:center; gap:6px; flex:0 0 auto;}
+.cal-scanned-amt input{width:64px; border:1px solid var(--line-strong); background:var(--surface); border-radius:8px; padding:7px 8px; font-family:var(--fm); font-size:14px; text-align:right; color:var(--ink);}
+.cal-scanned-amt input:focus{outline:none; border-color:var(--accent);}
+.cal-scanned-amt span{font-size:12px; color:var(--muted);}
+
+.cal-scan-bg{position:fixed; inset:0; background:rgba(24,26,20,.6); backdrop-filter:blur(2px); display:flex; align-items:center; justify-content:center; z-index:60; padding:16px;}
+.cal-scan{background:var(--paper); width:100%; max-width:420px; border-radius:16px; border:1px solid var(--line); overflow:hidden;}
+.cal-scan-head{display:flex; align-items:center; justify-content:space-between; padding:14px 16px; font-weight:600; font-size:15px; border-bottom:1px solid var(--line);}
+.cal-scan-video{position:relative; background:#000; aspect-ratio:4/3; display:flex; align-items:center; justify-content:center;}
+.cal-scan-video video{width:100%; height:100%; object-fit:cover;}
+.cal-scan-line{position:absolute; left:8%; right:8%; top:50%; height:2px; background:var(--over); box-shadow:0 0 10px 1px var(--over);}
+.cal-scan-hint{padding:12px 16px; font-size:13px; color:var(--muted); text-align:center;}
+
 .cal-spin{animation:cal-rot 1s linear infinite;}
 @keyframes cal-rot{to{transform:rotate(360deg);}}
 @media (prefers-reduced-motion: reduce){

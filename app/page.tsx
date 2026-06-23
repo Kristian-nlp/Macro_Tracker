@@ -2,7 +2,9 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import {
+  Barcode,
   Camera,
   Check,
   History,
@@ -19,6 +21,11 @@ import { api } from "@/lib/api";
 import { downscale, type Downscaled } from "@/lib/image";
 import { DAYS_SHORT, dayLabel, nowTime, todayKey, weekdayOf } from "@/lib/date";
 import type { DayType, Entry, Settings, Template } from "@/lib/types";
+
+// Camera scanner is browser-only and pulls in ZXing, so load it lazily.
+const BarcodeScanner = dynamic(() => import("@/components/BarcodeScanner"), { ssr: false });
+
+type Macros = { kcal: number; protein: number; carbs: number; fat: number };
 
 const DEFAULT_SETTINGS: Settings = {
   target: null,
@@ -68,6 +75,11 @@ export default function TodayPage() {
   const [draft, setDraft] = useState<Draft>(EMPTY_DRAFT);
   const [showSettings, setShowSettings] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
+
+  // barcode scanning
+  const [scanning, setScanning] = useState(false);
+  const [scanned, setScanned] = useState<{ name: string; per100g: Macros } | null>(null);
+  const [amount, setAmount] = useState("");
 
   const tKey = todayKey();
 
@@ -182,6 +194,39 @@ export default function TodayPage() {
     }
   }
 
+  // Fill the editable draft from a scanned product's per-100g macros, scaled to
+  // the entered amount in grams.
+  function applyAmount(name: string, per100g: Macros, grams: number) {
+    const f = (grams || 0) / 100;
+    setDraft({
+      label: name,
+      kcal: String(Math.round(per100g.kcal * f)),
+      protein: String(Math.round(per100g.protein * f)),
+      carbs: String(Math.round(per100g.carbs * f)),
+      fat: String(Math.round(per100g.fat * f)),
+      note: `${grams || 0} g of ${name}`,
+    });
+  }
+
+  async function onBarcode(code: string) {
+    setScanning(false);
+    setEstErr("");
+    try {
+      const r = await fetch(`/api/product/${encodeURIComponent(code)}`, { cache: "no-store" });
+      const data = await r.json();
+      if (!data?.found) {
+        setEstErr("That barcode wasn't found in the food database. Add the numbers manually.");
+        return;
+      }
+      const grams: number = data.servingGrams ?? 100;
+      setScanned({ name: data.name, per100g: data.per100g });
+      setAmount(String(grams));
+      applyAmount(data.name, data.per100g, grams);
+    } catch {
+      setEstErr("Could not look up that barcode. Add the numbers manually.");
+    }
+  }
+
   const kcalNum = Math.round(Number(draft.kcal) || 0);
   const canAdd = kcalNum > 0;
 
@@ -199,6 +244,8 @@ export default function TodayPage() {
     setImg(null);
     setEstErr("");
     setDraft(EMPTY_DRAFT);
+    setScanned(null);
+    setAmount("");
   }
 
   async function saveDraftAsFavourite() {
@@ -385,9 +432,6 @@ export default function TodayPage() {
 
         <div className="cal-row">
           <input ref={fileRef} type="file" accept="image/*" onChange={onPickFile} style={{ display: "none" }} />
-          <button className="cal-btn cal-btn-sec" onClick={() => fileRef.current?.click()}>
-            <Camera size={16} /> {img ? "Change photo" : "Add photo"}
-          </button>
           <button
             className="cal-btn cal-btn-sec"
             onClick={runEstimate}
@@ -401,12 +445,44 @@ export default function TodayPage() {
               <>Estimate macros</>
             )}
           </button>
+          <button className="cal-btn cal-btn-sec" onClick={() => fileRef.current?.click()}>
+            <Camera size={16} /> {img ? "Change photo" : "Add photo"}
+          </button>
+          <button
+            className="cal-btn cal-btn-sec"
+            onClick={() => {
+              setEstErr("");
+              setScanning(true);
+            }}
+          >
+            <Barcode size={16} /> Barcode
+          </button>
         </div>
 
         {estErr && <div className="cal-err">{estErr}</div>}
 
         {/* editable entry */}
         <div className="cal-entry">
+          {scanned && (
+            <div className="cal-scanned">
+              <span className="cal-scanned-name">{scanned.name}</span>
+              <label className="cal-scanned-amt">
+                <input
+                  inputMode="numeric"
+                  value={amount}
+                  onChange={(e) => {
+                    setAmount(e.target.value);
+                    applyAmount(
+                      scanned.name,
+                      scanned.per100g,
+                      Math.max(0, Math.round(Number(e.target.value) || 0)),
+                    );
+                  }}
+                />
+                <span>g</span>
+              </label>
+            </div>
+          )}
           <input
             className="cal-input"
             placeholder="Name (optional)"
@@ -475,6 +551,9 @@ export default function TodayPage() {
           Saved automatically · estimates are approximate, edit before logging
         </span>
       </div>
+
+      {/* barcode scanner */}
+      {scanning && <BarcodeScanner onDetected={onBarcode} onClose={() => setScanning(false)} />}
 
       {/* settings drawer */}
       {showSettings && (
