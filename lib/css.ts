@@ -55,7 +55,7 @@ html,body{margin:0; padding:0; background:#EDEFE9;}
 .cal-switch.is-rest .cal-switch-opt.rest{color:#F7F8F3;}
 .cal-switch.is-training .cal-switch-opt.training{color:#F7F8F3;}
 .cal-macro-v{font-family:var(--fm); font-size:17px; font-weight:500; letter-spacing:-0.02em;}
-.cal-macro-t{font-size:12px; color:var(--muted); font-weight:400; letter-spacing:0;}
+.cal-macro-g{font-family:var(--fm); font-size:12px; color:var(--muted); line-height:1.2; margin-top:1px;}
 .cal-macro-u{font-size:11px; color:var(--muted); margin-left:1px;}
 .cal-macro-l{font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color:var(--muted); margin-top:2px;}
 

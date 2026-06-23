@@ -16,11 +16,8 @@ export function Macro({
 }) {
   return (
     <div className="cal-macro">
-      <div className="cal-macro-v">
-        {val}
-        {target != null ? <span className="cal-macro-t">/{target}</span> : null}
-        <span className="cal-macro-u">{unit}</span>
-      </div>
+      <div className="cal-macro-v">{val}</div>
+      <div className="cal-macro-g">{target != null ? `/ ${target} ${unit}` : unit}</div>
       <div className="cal-macro-l">{label}</div>
     </div>
   );
