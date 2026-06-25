@@ -86,6 +86,7 @@ export const T = {
     trainingDays: "Training days",
     trainingDaysHint: "Marked days use your training target; the rest use your rest target. The toggle on Today overrides just that day.",
     favourites: "Favourites",
+    noFavourites: "No favourites yet. Save a meal as a favourite to re-add it in one tap.",
     sameAsTraining: "same as training",
     optional: "optional",
 
@@ -333,6 +334,7 @@ export const T = {
     trainingDays: "Trainingstage",
     trainingDaysHint: "Markierte Tage nutzen dein Trainingsziel, die übrigen das Ruhe-Ziel. Der Schalter auf Heute überschreibt nur diesen Tag.",
     favourites: "Favoriten",
+    noFavourites: "Noch keine Favoriten. Speichere eine Mahlzeit als Favorit, um sie mit einem Tipp erneut hinzuzufügen.",
     sameAsTraining: "wie Trainingstag",
     optional: "optional",
 

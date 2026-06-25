@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { Calculator, Loader2, Pencil, Trash2, X } from "lucide-react";
-import { MacroShape } from "@/components/MacroMarker";
+import { MacroMarker, MacroShape } from "@/components/MacroMarker";
 import { TargetWizard } from "@/components/TargetWizard";
 import { BottomNav } from "@/components/BottomNav";
 import { useLang } from "@/components/LangProvider";
@@ -11,8 +11,8 @@ import { addDays, todayKey, weekdayOf } from "@/lib/date";
 import { DAYS_SHORT } from "@/lib/i18n";
 import { downloadExcel } from "@/lib/excel";
 import { getHeroMetric, getHeroView, saveHeroMetric, saveHeroView, type HeroMetric, type HeroView } from "@/lib/prefs";
-import type { DayType, Settings } from "@/lib/types";
-import type { MacroKey } from "@/lib/macros";
+import type { DayType, Settings, Template } from "@/lib/types";
+import { dominantMacro, type MacroKey } from "@/lib/macros";
 import type { Plan } from "@/lib/plan";
 
 const DEFAULT_SETTINGS: Settings = {
@@ -66,7 +66,8 @@ export default function SettingsPage() {
   const [loaded, setLoaded] = useState(false);
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [username, setUsername] = useState("");
-  const [favCount, setFavCount] = useState(0);
+  const [templates, setTemplates] = useState<Template[]>([]);
+  const [showFavs, setShowFavs] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [macroDay, setMacroDay] = useState<DayType>("training"); // which set the macro targets edit
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -82,7 +83,7 @@ export default function SettingsPage() {
         const [me, s, tpls] = await Promise.all([api.getMe(), api.getSettings(), api.getTemplates()]);
         setUsername(me.username);
         setSettings(s);
-        setFavCount(tpls.length);
+        setTemplates(tpls);
       } catch {
         /* ignore */
       }
@@ -115,6 +116,18 @@ export default function SettingsPage() {
       : [...settings.trainingDays, d];
     persist({ ...settings, trainingDays: set });
   }
+  async function deleteFavourite(id: string) {
+    const prev = templates;
+    setTemplates((cur) => cur.filter((x) => x.id !== id));
+    try {
+      await api.deleteTemplate(id);
+    } catch {
+      setTemplates(prev);
+    }
+  }
+  const mostlyKey = (p: number, c: number, f: number) =>
+    ({ protein: "mostlyProtein", carbs: "mostlyCarbs", fat: "mostlyFat" } as const)[dominantMacro(p, c, f)];
+
   function applyPlan(plan: Plan) {
     persist({
       ...settings,
@@ -299,12 +312,16 @@ export default function SettingsPage() {
         {/* data */}
         <div className="g-overline" style={{ margin: "20px 2px 10px" }}>{t("dataSection")}</div>
         <div style={card}>
-          <div style={rowDiv}>
+          <button
+            onClick={() => setShowFavs(true)}
+            style={{ ...rowDiv, width: "100%", background: "none", borderTop: "none", borderLeft: "none", borderRight: "none", textAlign: "left", cursor: "pointer" }}
+          >
             <span style={labelFg}>{t("favourites")}</span>
             <span style={{ display: "flex", alignItems: "center", gap: 8, color: "#9A9C8F" }}>
-              <span className="g-fm" style={{ fontSize: 14 }}>{favCount}</span>
+              <span className="g-fm" style={{ fontSize: 14 }}>{templates.length}</span>
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#B7B9AC" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 6l6 6-6 6" /></svg>
             </span>
-          </div>
+          </button>
           <div style={rowDiv}>
             <span style={labelFg}>{t("language")}</span>
             <div className="g-daytype">
@@ -358,6 +375,43 @@ export default function SettingsPage() {
             <button className="g-btn g-btn-ghost" onClick={() => setConfirmDelete(false)} disabled={deleting} style={{ marginTop: 4 }}>
               {t("cancel")}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* favourites list */}
+      {showFavs && (
+        <div className="g-sheet-bg" onClick={() => setShowFavs(false)}>
+          <div className="g-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="g-sheet-grab"><span /></div>
+            <div className="g-sheet-head">
+              <span className="g-sheet-title">{t("favourites")}</span>
+              <button className="g-sheet-x" onClick={() => setShowFavs(false)} aria-label="×"><X size={16} /></button>
+            </div>
+            <div className="g-sheet-body" style={{ paddingBottom: 28 }}>
+              {templates.length === 0 ? (
+                <div style={{ fontSize: 14, color: "#9A9C8F", padding: "16px 2px", lineHeight: 1.5 }}>{t("noFavourites")}</div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: 10, marginTop: 8 }}>
+                  {templates.map((tpl) => (
+                    <div key={tpl.id} className="g-fav">
+                      <MacroMarker protein={tpl.protein} carbs={tpl.carbs} fat={tpl.fat} tileSize={34} tileRadius={11} shapeSize={13} />
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div className="g-fg" style={{ fontWeight: 500, fontSize: 14.5, color: "#1B1D17", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{tpl.name}</div>
+                        <div style={{ fontSize: 11.5, color: "#9A9C8F" }}>{tpl.kcal} kcal · {t(mostlyKey(tpl.protein, tpl.carbs, tpl.fat))}</div>
+                      </div>
+                      <button
+                        onClick={() => deleteFavourite(tpl.id)}
+                        aria-label={t("aDelete")}
+                        style={{ flex: "none", border: "none", background: "none", color: "#B9BBAE", padding: 6, display: "grid", placeItems: "center", borderRadius: 8 }}
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
           </div>
         </div>
       )}
