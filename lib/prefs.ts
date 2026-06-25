@@ -27,3 +27,26 @@ export function getHeroMetric(): HeroMetric {
 export function saveHeroMetric(v: HeroMetric) {
   if (typeof window !== "undefined") window.localStorage.setItem(METRIC_KEY, v);
 }
+
+// Remember the target-calculator answers (per device) so re-running pre-fills.
+const PLAN_KEY = "mt_plan_inputs";
+
+export function getPlanInputs(): Record<string, unknown> | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.localStorage.getItem(PLAN_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+}
+
+export function savePlanInputs(input: unknown) {
+  if (typeof window !== "undefined") {
+    try {
+      window.localStorage.setItem(PLAN_KEY, JSON.stringify(input));
+    } catch {
+      /* ignore */
+    }
+  }
+}

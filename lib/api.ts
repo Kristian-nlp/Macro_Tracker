@@ -2,6 +2,7 @@
 // httpOnly session cookie set at login; on 401 we bounce to the login screen.
 
 import type { Entry, EstimateResult, Settings, Template } from "./types";
+import type { Plan, PlanInput } from "./plan";
 
 async function getJSON<T>(url: string): Promise<T> {
   const res = await fetch(url, { cache: "no-store" });
@@ -53,4 +54,7 @@ export const api = {
   // estimate
   estimate: (payload: { imageBase64?: string; mediaType?: string; text: string }) =>
     sendJSON<EstimateResult>("/api/estimate", "POST", payload),
+
+  // target calculator
+  plan: (input: PlanInput) => sendJSON<Plan>("/api/plan", "POST", input),
 };

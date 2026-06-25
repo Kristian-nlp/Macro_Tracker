@@ -79,6 +79,8 @@ html,body{margin:0; padding:0; background:#F4F1E8;}
 .g-btn-pri{background:var(--sage); color:var(--paper); box-shadow:0 12px 24px -10px rgba(85,101,76,.6);}
 .g-btn-pri:hover:not(:disabled){background:var(--sage-deep);}
 .g-btn-pri:disabled{opacity:.5; box-shadow:none; cursor:default;}
+.g-btn-sec{background:var(--surface); color:var(--sage); border:1px solid var(--border-input);}
+.g-btn-sec:hover{border-color:var(--sage); background:var(--sage-tint);}
 .g-btn-ghost{background:none; color:var(--muted); border:none; font-size:13.5px; padding:12px; font-weight:600;}
 .g-btn-ghost:hover:not(:disabled){color:var(--ink);}
 .g-btn-block{border-radius:13px; padding:13px; font-size:14.5px;}
@@ -130,6 +132,12 @@ textarea.g-input{resize:none; font-family:var(--fg);}
 .g-segs{display:flex; gap:6px;}
 .g-segs button{flex:1; padding:8px 4px; border:1px solid var(--border-input); background:var(--surface); border-radius:10px; font-family:var(--fg); font-weight:600; font-size:12.5px; color:var(--muted); transition:background .15s ease, color .15s ease, border-color .15s ease;}
 .g-segs button.is-on{background:var(--sage); color:var(--paper); border-color:var(--sage);}
+/* selectable option rows (target calculator) */
+.g-opt{display:flex; align-items:center; justify-content:space-between; gap:10px; width:100%; text-align:left; background:var(--surface); border:1px solid var(--border-input); border-radius:13px; padding:12px 14px; transition:border-color .15s ease, background .15s ease;}
+.g-opt.is-on{border-color:var(--sage); background:var(--sage-tint);}
+.g-opt-dot{flex:none; width:18px; height:18px; border-radius:50%; border:2px solid #CFCBBC; box-sizing:border-box; transition:border-color .15s ease, background .15s ease;}
+.g-opt-dot.on{border-color:var(--sage); background:var(--sage); box-shadow:inset 0 0 0 3px var(--sage-tint);}
+
 .g-weekdays{display:flex; gap:6px;}
 .g-weekday{flex:1; height:42px; border-radius:11px; border:1px solid var(--border-input); background:var(--surface); color:var(--muted); font-family:var(--fg); font-weight:600; font-size:13px; transition:background .15s ease, color .15s ease, border-color .15s ease;}
 .g-weekday.on{background:var(--sage); border-color:var(--sage); color:var(--paper);}

@@ -4,9 +4,11 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { MacroShape } from "@/components/MacroMarker";
+import { TargetWizard } from "@/components/TargetWizard";
 import { useLang } from "@/components/LangProvider";
 import { api } from "@/lib/api";
 import type { Settings } from "@/lib/types";
+import type { Plan } from "@/lib/plan";
 
 // Sign in — username + 4-digit PIN (the app's existing auth; no email). The
 // three macro shapes double as the logo. New usernames are created on first
@@ -22,6 +24,7 @@ export default function LoginPage() {
   const [pinFocused, setPinFocused] = useState(false);
   const [step, setStep] = useState<"auth" | "targets">("auth");
   const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [onbView, setOnbView] = useState<"choose" | "wizard" | "manual">("choose");
   const [trainingKcal, setTrainingKcal] = useState("");
   const [restKcal, setRestKcal] = useState("");
   const userRef = useRef<HTMLInputElement>(null);
@@ -107,6 +110,28 @@ export default function LoginPage() {
     enterApp();
   }
 
+  // Apply a calculated plan (training/rest kcal + macros) and enter the app.
+  async function applyPlanAndEnter(plan: Plan) {
+    const next: Settings = {
+      target: plan.trainingKcal,
+      trainingProtein: plan.trainingProtein,
+      trainingCarbs: plan.trainingCarbs,
+      trainingFat: plan.trainingFat,
+      restTarget: plan.restKcal,
+      restProtein: plan.restProtein,
+      restCarbs: plan.restCarbs,
+      restFat: plan.restFat,
+      trainingDays: [1, 3, 5, 0],
+      overrides: {},
+    };
+    try {
+      await api.putSettings(next);
+    } catch {
+      /* non-fatal */
+    }
+    enterApp();
+  }
+
   const overline: React.CSSProperties = {
     fontSize: 11,
     letterSpacing: ".12em",
@@ -149,14 +174,34 @@ export default function LoginPage() {
       </div>
     );
 
+    const logo = (
+      <div style={{ display: "flex", gap: 11, alignItems: "center" }}>
+        <MacroShape macro="protein" size={16} />
+        <MacroShape macro="carbs" size={15} />
+        <MacroShape macro="fat" size={15} />
+      </div>
+    );
+
+    // Calculator questionnaire
+    if (onbView === "wizard") {
+      return (
+        <div style={{ padding: "52px 28px 48px", minHeight: "100dvh" }}>
+          {logo}
+          <h1 className="g-fg" style={{ fontWeight: 700, fontSize: 26, color: "#1B1D17", letterSpacing: "-.02em", margin: "16px 0 18px" }}>{t("onbTitle")}</h1>
+          <TargetWizard onApply={applyPlanAndEnter} applyLabel={t("onbGetStarted")} />
+          <div style={{ textAlign: "center", marginTop: 14 }}>
+            <button type="button" onClick={() => setOnbView("choose")} style={{ color: "#6B6E60", fontWeight: 600, background: "none", border: "none", padding: 8, font: "inherit", fontSize: 13.5 }}>
+              ← {t("cancel")}
+            </button>
+          </div>
+        </div>
+      );
+    }
+
     return (
       <form onSubmit={finishTargets} style={{ display: "flex", flexDirection: "column", minHeight: "100dvh", padding: "0 32px 40px" }}>
         <div style={{ marginTop: 96 }}>
-          <div style={{ display: "flex", gap: 11, alignItems: "center" }}>
-            <MacroShape macro="protein" size={18} />
-            <MacroShape macro="carbs" size={17} />
-            <MacroShape macro="fat" size={17} />
-          </div>
+          {logo}
           <h1 className="g-fg" style={{ fontWeight: 700, fontSize: 30, color: "#1B1D17", letterSpacing: "-.02em", margin: "26px 0 0" }}>
             {t("onbTitle")}
           </h1>
@@ -165,43 +210,28 @@ export default function LoginPage() {
 
         <div style={{ flex: 1 }} />
 
-        <div>
-          <div style={overline}>{t("trainingDayRow")}</div>
-          {kcalField(trainingKcal, setTrainingKcal, t("trainingDayRow"), "2600", true)}
-          <div style={{ ...overline, margin: "16px 0 8px" }}>{t("restDayRow")}</div>
-          {kcalField(restKcal, setRestKcal, t("restDayRow"), "2200")}
-
-          <div style={{ marginTop: 12, fontSize: 13, color: "#6B6E60" }}>
-            {t("dontKnowTarget")}{" "}
-            <a
-              href="https://www.calculator.net/calorie-calculator.html"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{ color: "#55654C", fontWeight: 600, textDecoration: "underline" }}
-            >
-              {t("calculateIt")}
-            </a>
-          </div>
-
-          <button className="g-btn g-btn-pri" type="submit" disabled={busy} style={{ marginTop: 24 }}>
-            {busy ? (
-              <>
-                <Loader2 size={16} className="g-spin" /> {t("signingIn")}
-              </>
-            ) : (
-              t("onbGetStarted")
-            )}
-          </button>
-          <div style={{ textAlign: "center", marginTop: 12 }}>
-            <button
-              type="button"
-              onClick={enterApp}
-              style={{ color: "#6B6E60", fontWeight: 600, background: "none", border: "none", padding: 8, font: "inherit", fontSize: 13.5 }}
-            >
-              {t("onbSkip")}
+        {onbView === "manual" ? (
+          <div>
+            <div style={overline}>{t("trainingDayRow")}</div>
+            {kcalField(trainingKcal, setTrainingKcal, t("trainingDayRow"), "2600", true)}
+            <div style={{ ...overline, margin: "16px 0 8px" }}>{t("restDayRow")}</div>
+            {kcalField(restKcal, setRestKcal, t("restDayRow"), "2200")}
+            <button className="g-btn g-btn-pri" type="submit" disabled={busy} style={{ marginTop: 24 }}>
+              {busy ? (<><Loader2 size={16} className="g-spin" /> {t("signingIn")}</>) : t("onbGetStarted")}
             </button>
+            <div style={{ textAlign: "center", marginTop: 12 }}>
+              <button type="button" onClick={() => setOnbView("choose")} style={{ color: "#6B6E60", fontWeight: 600, background: "none", border: "none", padding: 8, font: "inherit", fontSize: 13.5 }}>← {t("cancel")}</button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div>
+            <button type="button" className="g-btn g-btn-pri" onClick={() => setOnbView("wizard")}>{t("planCalcMine")}</button>
+            <button type="button" className="g-btn g-btn-ghost" onClick={() => setOnbView("manual")} style={{ marginTop: 6 }}>{t("enterManually")}</button>
+            <div style={{ textAlign: "center", marginTop: 8 }}>
+              <button type="button" onClick={enterApp} style={{ color: "#6B6E60", fontWeight: 600, background: "none", border: "none", padding: 8, font: "inherit", fontSize: 13.5 }}>{t("onbSkip")}</button>
+            </div>
+          </div>
+        )}
       </form>
     );
   }

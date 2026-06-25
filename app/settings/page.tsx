@@ -1,8 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Loader2, Pencil, Trash2 } from "lucide-react";
+import { Calculator, Loader2, Pencil, Trash2, X } from "lucide-react";
 import { MacroShape } from "@/components/MacroMarker";
+import { TargetWizard } from "@/components/TargetWizard";
 import { BottomNav } from "@/components/BottomNav";
 import { useLang } from "@/components/LangProvider";
 import { api } from "@/lib/api";
@@ -12,6 +13,7 @@ import { downloadExcel } from "@/lib/excel";
 import { getHeroMetric, getHeroView, saveHeroMetric, saveHeroView, type HeroMetric, type HeroView } from "@/lib/prefs";
 import type { DayType, Settings } from "@/lib/types";
 import type { MacroKey } from "@/lib/macros";
+import type { Plan } from "@/lib/plan";
 
 const DEFAULT_SETTINGS: Settings = {
   target: null,
@@ -72,6 +74,7 @@ export default function SettingsPage() {
   const [delErr, setDelErr] = useState("");
   const [heroView, setHeroViewState] = useState<HeroView>("left");
   const [heroMetric, setHeroMetricState] = useState<HeroMetric>("calories");
+  const [showWizard, setShowWizard] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -111,6 +114,20 @@ export default function SettingsPage() {
       ? settings.trainingDays.filter((x) => x !== d)
       : [...settings.trainingDays, d];
     persist({ ...settings, trainingDays: set });
+  }
+  function applyPlan(plan: Plan) {
+    persist({
+      ...settings,
+      target: plan.trainingKcal,
+      restTarget: plan.restKcal,
+      trainingProtein: plan.trainingProtein,
+      trainingCarbs: plan.trainingCarbs,
+      trainingFat: plan.trainingFat,
+      restProtein: plan.restProtein,
+      restCarbs: plan.restCarbs,
+      restFat: plan.restFat,
+    });
+    setShowWizard(false);
   }
 
   async function onExport() {
@@ -210,7 +227,10 @@ export default function SettingsPage() {
             <TargetValue value={settings.restTarget} suffix={t("xlKcal")} onChange={(r) => setNum("restTarget", r)} />
           </div>
         </div>
-        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, margin: "10px 4px 0", fontSize: 12, color: "#9A9C8F", lineHeight: 1.45 }}>
+        <button className="g-btn g-btn-sec" onClick={() => setShowWizard(true)} style={{ marginTop: 12 }}>
+          <Calculator size={16} /> {t("planCalcMine")}
+        </button>
+        <div style={{ display: "flex", alignItems: "flex-start", gap: 8, margin: "12px 4px 0", fontSize: 12, color: "#9A9C8F", lineHeight: 1.45 }}>
           <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#A8A99B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none", marginTop: 1 }}>
             <circle cx="12" cy="12" r="9" /><path d="M12 8h.01M11 12h1v4h1" />
           </svg>
@@ -343,6 +363,22 @@ export default function SettingsPage() {
             <button className="g-btn g-btn-ghost" onClick={() => setConfirmDelete(false)} disabled={deleting} style={{ marginTop: 4 }}>
               {t("cancel")}
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* target calculator */}
+      {showWizard && (
+        <div className="g-sheet-bg" onClick={() => setShowWizard(false)}>
+          <div className="g-sheet" onClick={(e) => e.stopPropagation()}>
+            <div className="g-sheet-grab"><span /></div>
+            <div className="g-sheet-head">
+              <span className="g-sheet-title">{t("planCalcMine")}</span>
+              <button className="g-sheet-x" onClick={() => setShowWizard(false)} aria-label="×"><X size={16} /></button>
+            </div>
+            <div className="g-sheet-body" style={{ paddingBottom: 28 }}>
+              <TargetWizard onApply={applyPlan} />
+            </div>
           </div>
         </div>
       )}
