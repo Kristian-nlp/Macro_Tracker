@@ -1,12 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Loader2 } from "lucide-react";
+import { Loader2, X } from "lucide-react";
 import { DotGrid } from "@/components/DotGrid";
+import { MealRow } from "@/components/MealRow";
 import { BottomNav } from "@/components/BottomNav";
 import { useLang } from "@/components/LangProvider";
 import { api } from "@/lib/api";
-import { addDays, dateShort, todayKey, weekdayOf, weekdayShortUpper } from "@/lib/date";
+import { addDays, dateShort, dayLabel, slotKey, todayKey, weekdayOf, weekdayShortUpper } from "@/lib/date";
 import { downloadExcel } from "@/lib/excel";
 import type { DayType, Entry, Settings } from "@/lib/types";
 
@@ -34,6 +35,7 @@ export default function HistoryPage() {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [entries, setEntries] = useState<Entry[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedDay, setSelectedDay] = useState<string | null>(null);
 
   useEffect(() => {
     api.getSettings().then(setSettings).catch(() => {});
@@ -146,7 +148,14 @@ export default function HistoryPage() {
               const delta = d.target != null ? d.total - d.target : null;
               const isOver = delta != null && delta > 0;
               return (
-                <div key={d.key} style={{ display: "flex", alignItems: "center", gap: 14, padding: "13px 0", borderBottom: "1px solid #E4E1D3" }}>
+                <div
+                  key={d.key}
+                  onClick={() => setSelectedDay(d.key)}
+                  onKeyDown={(e) => (e.key === "Enter" || e.key === " ") && (e.preventDefault(), setSelectedDay(d.key))}
+                  role="button"
+                  tabIndex={0}
+                  style={{ display: "flex", alignItems: "center", gap: 12, padding: "13px 0", borderBottom: "1px solid #E4E1D3", cursor: "pointer" }}
+                >
                   <div style={{ width: 42, flex: "none" }}>
                     <div style={{ fontSize: 10, letterSpacing: ".06em", color: "#9A9C8F", fontWeight: 600 }}>{weekdayShortUpper(d.key, lang)}</div>
                     <div className="g-fg" style={{ fontWeight: 600, fontSize: 14, color: "#1B1D17" }}>{dateShort(d.key, lang)}</div>
@@ -163,12 +172,58 @@ export default function HistoryPage() {
                       </div>
                     )}
                   </div>
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#C2C4B7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ flex: "none" }}><path d="M9 6l6 6-6 6" /></svg>
                 </div>
               );
             })
           )}
         </div>
       </div>
+
+      {/* day detail — everything eaten on the tapped day */}
+      {selectedDay &&
+        (() => {
+          const dayMeals = entries.filter((e) => e.date === selectedDay);
+          const sum = byDay.get(selectedDay);
+          const dP = dayMeals.reduce((a, e) => a + (e.protein || 0), 0);
+          const dC = dayMeals.reduce((a, e) => a + (e.carbs || 0), 0);
+          const dF = dayMeals.reduce((a, e) => a + (e.fat || 0), 0);
+          const tgt = sum?.target ?? null;
+          return (
+            <div className="g-sheet-bg" onClick={() => setSelectedDay(null)}>
+              <div className="g-sheet" onClick={(e) => e.stopPropagation()}>
+                <div className="g-sheet-grab"><span /></div>
+                <div className="g-sheet-head">
+                  <span className="g-sheet-title">{dayLabel(selectedDay, lang)}</span>
+                  <button className="g-sheet-x" onClick={() => setSelectedDay(null)} aria-label="×"><X size={16} /></button>
+                </div>
+                <div className="g-sheet-body" style={{ paddingBottom: 26 }}>
+                  {/* day summary */}
+                  <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", background: "#FCFAF4", border: "1px solid #E4E0D2", borderRadius: 18, padding: 16, marginTop: 8 }}>
+                    <div>
+                      <div className="g-overline">{t("caloriesLabel")}</div>
+                      <div className="g-fg" style={{ fontWeight: 700, fontSize: 32, color: "#1B1D17", letterSpacing: "-.02em", lineHeight: 1, marginTop: 4 }}>
+                        {fmt(sum?.total ?? 0)}
+                        {tgt ? <span style={{ fontSize: 14, color: "#9A9C8F", fontWeight: 400 }}> / {fmt(tgt)}</span> : null}
+                      </div>
+                    </div>
+                    <div className="g-fm" style={{ fontSize: 13, color: "#7A7E6F", textAlign: "right" }}>P{dP} · C{dC} · F{dF}</div>
+                  </div>
+                  {/* every meal that day */}
+                  <div style={{ marginTop: 8 }}>
+                    {dayMeals.length === 0 ? (
+                      <div style={{ fontSize: 14, color: "#9A9C8F", padding: "16px 0" }}>{t("nothingLogged")}</div>
+                    ) : (
+                      dayMeals.map((e) => (
+                        <MealRow key={e.id} title={e.label} meta={`${t(slotKey(e.time))} · ${e.time}`} kcal={e.kcal} protein={e.protein} carbs={e.carbs} fat={e.fat} />
+                      ))
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
       <div className="g-footer">
         <BottomNav active="history" labels={{ today: t("backToday"), history: t("historyTitle"), settings: t("settingsTitle"), add: t("addMeal") }} />
