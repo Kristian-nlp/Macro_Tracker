@@ -329,6 +329,12 @@ export default function SettingsPage() {
         >
           <Trash2 size={14} /> {t("deleteAccount")}
         </button>
+
+        <div style={{ textAlign: "center", margin: "24px 0 4px", fontSize: 11.5, color: "#9A9C8F", lineHeight: 1.5 }}>
+          Created by Kristian Zutter
+          <br />
+          <a href="mailto:kristian.z@proton.me" style={{ color: "#55654C" }}>kristian.z@proton.me</a>
+        </div>
       </div>
 
       {/* delete-account confirmation */}
