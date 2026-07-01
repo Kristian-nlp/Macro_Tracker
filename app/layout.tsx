@@ -29,7 +29,9 @@ export const viewport: Viewport = {
   themeColor: "#55654C",
   width: "device-width",
   initialScale: 1,
-  maximumScale: 1,
+  // No maximumScale: pinning it to 1 blocks pinch-zoom (an accessibility
+  // regression) and, together with sub-16px inputs, made iOS auto-zoom on focus.
+  // Inputs are now 16px, which is what actually stops the focus-zoom.
   viewportFit: "cover",
 };
 
