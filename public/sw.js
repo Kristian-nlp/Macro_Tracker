@@ -3,14 +3,21 @@
 // go to the network — saving happens on each log via the API, and iOS PWAs have
 // no real background execution, which is fine here.
 
-const CACHE = "intake-shell-v1";
+const CACHE = "intake-shell-v2";
 const SHELL = ["/", "/history", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png"];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE).then((cache) => cache.addAll(SHELL)).catch(() => {}),
   );
-  self.skipWaiting();
+  // No skipWaiting() here: a new build waits until the user taps "reload" (see
+  // RegisterSW), so an update never yanks the page out from under someone who is
+  // mid-entry. The page asks us to take over via the SKIP_WAITING message below.
+});
+
+// Let the page trigger activation of a waiting worker on demand.
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("activate", (event) => {

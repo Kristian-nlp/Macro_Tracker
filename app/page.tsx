@@ -754,7 +754,7 @@ export default function TodayPage() {
                           placeholder="0"
                           onChange={(e) => setVal(k, Math.round(Number(e.target.value.replace(/\D/g, "").slice(0, 4)) || 0))}
                           aria-label={t(k)}
-                          style={{ width: 30, border: "none", background: "none", textAlign: "right", fontSize: 15, color: "#1B1D17", outline: "none" }}
+                          style={{ width: 34, border: "none", background: "none", textAlign: "right", fontSize: 16, color: "#1B1D17", outline: "none" }}
                         />
                         <span className="g-fm" style={{ fontSize: 12, color: "#9A9C8F" }}>g</span>
                       </span>
@@ -777,7 +777,7 @@ export default function TodayPage() {
                         placeholder="0"
                         onChange={(e) => setScanAmount(Number(e.target.value.replace(/\D/g, "").slice(0, 5)) || 0)}
                         aria-label={t("amount")}
-                        style={{ width: 56, border: "1px solid #E0DCCE", borderRadius: 10, padding: "6px 8px", textAlign: "right", background: "#F4F1E8", outline: "none", fontSize: 14, color: "#1B1D17" }}
+                        style={{ width: 56, border: "1px solid #E0DCCE", borderRadius: 10, padding: "6px 8px", textAlign: "right", background: "#F4F1E8", outline: "none", fontSize: 16, color: "#1B1D17" }}
                       />
                       <span style={{ color: "#9A9C8F", fontSize: 12 }}>g</span>
                     </span>

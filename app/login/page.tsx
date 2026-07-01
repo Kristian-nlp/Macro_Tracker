@@ -145,7 +145,7 @@ export default function LoginPage() {
     border: "1px solid #E0DCCE",
     borderRadius: 14,
     padding: 14,
-    fontSize: 15,
+    fontSize: 16,
     color: "#1B1D17",
     width: "100%",
   };
@@ -168,7 +168,7 @@ export default function LoginPage() {
           placeholder={placeholder}
           aria-label={label}
           className="g-fm"
-          style={{ flex: 1, minWidth: 0, border: "none", background: "none", outline: "none", fontSize: 15, color: "#1B1D17", padding: "10px 0" }}
+          style={{ flex: 1, minWidth: 0, border: "none", background: "none", outline: "none", fontSize: 16, color: "#1B1D17", padding: "10px 0" }}
         />
         <span style={{ color: "#9A9C8F", fontSize: 13 }}>{t("xlKcal")}</span>
       </div>
@@ -286,7 +286,7 @@ export default function LoginPage() {
               maxLength={4}
               autoComplete="off"
               aria-label={t("pin")}
-              style={{ position: "absolute", inset: 0, width: "100%", opacity: 0, cursor: "pointer", border: "none", background: "transparent" }}
+              style={{ position: "absolute", inset: 0, width: "100%", opacity: 0, cursor: "pointer", border: "none", background: "transparent", fontSize: 16 }}
             />
             {[0, 1, 2, 3].map((i) => {
               const filled = pin.length > i;

@@ -86,7 +86,7 @@ html,body{margin:0; padding:0; background:#F4F1E8;}
 .g-btn-block{border-radius:13px; padding:13px; font-size:14.5px;}
 
 /* ---- inputs ---- */
-.g-input{width:100%; background:var(--surface); border:1px solid var(--border-input); border-radius:14px; padding:14px; font-size:15px; color:var(--ink); line-height:1.45;}
+.g-input{width:100%; background:var(--surface); border:1px solid var(--border-input); border-radius:14px; padding:14px; font-size:16px; color:var(--ink); line-height:1.45;}
 .g-input:focus{outline:none; border-color:var(--sage);}
 .g-input::placeholder{color:#9C9E90;}
 textarea.g-input{resize:none; font-family:var(--fg);}
@@ -95,7 +95,7 @@ textarea.g-input{resize:none; font-family:var(--fg);}
 /* Tappable editable number (Settings targets) — looks like a field, not text. */
 .g-editnum{display:inline-flex; align-items:center; gap:5px; background:var(--paper); border:1px solid var(--border-input); border-radius:10px; padding:6px 9px 6px 11px; cursor:text; transition:border-color .15s ease, background .15s ease;}
 .g-editnum:focus-within{border-color:var(--sage); background:var(--surface);}
-.g-editnum input{border:none; background:none; outline:none; text-align:right; font-size:15px; color:var(--ink); width:52px; padding:0;}
+.g-editnum input{border:none; background:none; outline:none; text-align:right; font-size:16px; color:var(--ink); width:52px; padding:0;}
 .g-editnum input::placeholder{color:#B7B9AC;}
 .g-editnum .g-editnum-pencil{flex:none; color:#B7B9AC;}
 .g-editnum:focus-within .g-editnum-pencil{color:var(--sage);}
@@ -183,4 +183,8 @@ textarea.g-input{resize:none; font-family:var(--fg);}
 .cal-scan-line{position:absolute; left:8%; right:8%; top:50%; height:2px; background:var(--terracotta); box-shadow:0 0 10px 1px var(--terracotta);}
 .cal-scan-hint{padding:12px 16px; font-size:13px; color:var(--muted); text-align:center;}
 .cal-spin{animation:g-rot 1s linear infinite;}
+
+/* ---- service-worker update prompt ---- */
+.g-sw-update{position:fixed; left:50%; bottom:calc(96px + env(safe-area-inset-bottom)); transform:translateX(-50%); z-index:70; display:inline-flex; align-items:center; gap:8px; font-family:var(--fg); font-weight:600; font-size:13.5px; color:var(--paper); background:var(--sage); border:none; border-radius:999px; padding:11px 18px; box-shadow:0 10px 26px -10px rgba(20,22,18,.5); cursor:pointer;}
+.g-sw-update:hover{background:var(--sage-deep);}
 `;

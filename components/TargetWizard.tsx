@@ -104,7 +104,7 @@ export function TargetWizard({ onApply, applyLabel }: { onApply: (p: Plan) => vo
   // ---------- form ----------
   const fieldStyle: React.CSSProperties = {
     background: "#FCFAF4", border: "1px solid #E0DCCE", borderRadius: 12, padding: "11px 12px",
-    fontSize: 15, color: "#1B1D17", width: "100%", fontFamily: "var(--fm)",
+    fontSize: 16, color: "#1B1D17", width: "100%", fontFamily: "var(--fm)",
   };
   const numField = (value: string, set: (v: string) => void, unit: string, ph: string, label: string) => (
     <div style={{ position: "relative", display: "flex", alignItems: "center" }}>
